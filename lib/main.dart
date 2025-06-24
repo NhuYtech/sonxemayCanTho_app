@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Khởi tạo Firebase
+  await Firebase.initializeApp().then((value) {
+    print("Firebase đã kết nối thành công 🔥");
+  });
+
   runApp(const MyApp());
 }
 
