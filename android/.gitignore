@@ -12,3 +12,8 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Node.js (backend)
+node_modules/
+package-lock.json
+.env
