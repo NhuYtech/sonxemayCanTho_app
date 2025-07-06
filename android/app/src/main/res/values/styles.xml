@@ -1,13 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- android/app/src/main/res/values/styles.xml -->
 <resources>
-    <!-- Màn hình khởi động ban đầu, khi Flutter chưa render -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <!-- Đổi màu nền splash screen -->
+        <!-- THAY ĐỔI dòng này -->
         <item name="android:windowBackground">@color/splash_red</item>
-    </style>
-
-    <!-- Theme chính của app sau khi Flutter load xong -->
-    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <!-- Thành màu đỏ giống Flutter splash, KHÔNG có logo -->
     </style>
 </resources>

@@ -13,7 +13,7 @@ class RoleSelectionScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Logo
-            Image.asset('assets/logo/logo.jpg'),
+            Image.asset('assets/logo/logo1.png'),
             const SizedBox(height: 20),
             const Text(
               'Xin chào,\nSơn Xe Máy Cần Thơ',
