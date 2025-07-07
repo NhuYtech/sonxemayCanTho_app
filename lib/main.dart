@@ -21,7 +21,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Sơn Xe Máy Cần Thơ',
       theme: ThemeData(
+        fontFamily: 'Itim',
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC54141)),
+        useMaterial3: true,
       ),
       home: const SplashScreen(),
     );
