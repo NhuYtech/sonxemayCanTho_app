@@ -89,18 +89,24 @@ class _LoginScreenState extends State<LoginScreen> {
               // Nút Đăng nhập
               ElevatedButton(
                 onPressed: () {
-                  // TODO: xử lý đăng nhập
                   final name = nameController.text;
                   final password = passwordController.text;
 
                   if (name.isEmpty || password.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Vui lòng nhập đầy đủ thông tin'),
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('LỖI'),
+                        content: const Text('Vui lòng nhập đầy đủ thông tin.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Đóng'),
+                          ),
+                        ],
                       ),
                     );
                   } else {
-                    // In ra cho biết đã nhấn
                     print('Đăng nhập với: $name - $password');
                     // TODO: chuyển sang màn chính tuỳ vai trò
                   }
@@ -109,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   backgroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 child: const Text(
@@ -119,13 +125,17 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const SizedBox(height: 20),
-              const Divider(color: Colors.white),
-
-              const SizedBox(height: 10),
-              const Center(
-                child: Text('hoặc', style: TextStyle(color: Colors.white)),
+              Row(
+                children: const [
+                  Expanded(child: Divider(color: Colors.white, thickness: 1)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Text('hoặc', style: TextStyle(color: Colors.white)),
+                  ),
+                  Expanded(child: Divider(color: Colors.white, thickness: 1)),
+                ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
 
               const Center(
                 child: Text(
@@ -143,7 +153,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Đăng ký',
                   style: TextStyle(
                     decoration: TextDecoration.underline,
-                    color: Colors.white,
+                    color: Color.fromARGB(255, 0, 0, 0),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
