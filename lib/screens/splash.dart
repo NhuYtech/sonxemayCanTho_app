@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'role_selection.dart';
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+class Splash extends StatefulWidget {
+  const Splash({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  State<Splash> createState() => _SplashState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashState extends State<Splash> {
   @override
   void initState() {
     super.initState();
