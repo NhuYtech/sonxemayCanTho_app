@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'role_selection_screen.dart';
+import 'role_selection.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,7 +16,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(const Duration(seconds: 2), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const RoleSelectionScreen()),
+        MaterialPageRoute(builder: (_) => const RoleSelection()),
       );
     });
   }

@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class Register extends StatefulWidget {
+  const Register({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<Register> createState() => _RegisterState();
 }
 
-// logic UI và xử lý trạng thái
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterState extends State<Register> {
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  bool _obscurePassword = true; // nút ẩn/hiển thị mật khẩu
+  bool _obscurePassword = true;
 
-  @override // ghi đè lại phương thức hàm build từ lớp cha State
+  @override
   Widget build(BuildContext context) {
-    // xây dựng giao diện người dùng
     return Scaffold(
       backgroundColor: const Color(0xFFC1473B),
       body: SafeArea(
@@ -26,37 +24,41 @@ class _LoginScreenState extends State<LoginScreen> {
           child: ListView(
             children: [
               const SizedBox(height: 20),
-              // Logo
               Center(child: Image.asset('assets/logo/logo1.png', width: 150)),
               const SizedBox(height: 20),
 
-              // Tên app
               const Center(
                 child: Text(
-                  'Sơn xe máy\nCần Thơ',
+                  'Đăng ký tài khoản',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
 
               // Họ và tên
               const Text('Họ và tên:', style: TextStyle(color: Colors.white)),
               const SizedBox(height: 5),
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  hintText: 'Nhập họ tên',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
+                decoration: _inputDecoration('Nhập họ và tên'),
+              ),
+              const SizedBox(height: 20),
+
+              // Số điện thoại
+              const Text(
+                'Số điện thoại:',
+                style: TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 5),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: _inputDecoration('Nhập số điện thoại'),
               ),
               const SizedBox(height: 20),
 
@@ -89,13 +91,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Nút Đăng nhập
+              // Nút Đăng ký
               ElevatedButton(
                 onPressed: () {
-                  final name = nameController.text;
-                  final password = passwordController.text;
+                  final name = nameController.text.trim();
+                  final phone = phoneController.text.trim();
+                  final password = passwordController.text.trim();
 
-                  if (name.isEmpty || password.isEmpty) {
+                  if (name.isEmpty || phone.isEmpty || password.isEmpty) {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -110,8 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   } else {
-                    print('Đăng nhập với: $name - $password');
-                    // TODO: chuyển sang màn chính tuỳ vai trò
+                    // TODO: xử lý đăng ký tài khoản
+                    print('Đăng ký với: $name - $phone - $password');
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -122,47 +125,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 child: const Text(
-                  'Đăng nhập',
+                  'Đăng ký',
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ),
-
-              const SizedBox(height: 20),
-              Row(
-                children: const [
-                  Expanded(child: Divider(color: Colors.white, thickness: 1)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Text('hoặc', style: TextStyle(color: Colors.white)),
-                  ),
-                  Expanded(child: Divider(color: Colors.white, thickness: 1)),
-                ],
-              ),
               const SizedBox(height: 20),
 
-              const Center(
-                child: Text(
-                  'Nếu bạn chưa có tài khoản\nVui lòng Đăng ký để tiếp tục',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-
+              // Nút quay lại
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RegisterScreen(),
-                    ),
-                  );
+                  Navigator.pop(context); // quay về màn trước
                 },
-
                 child: const Text(
-                  'Đăng ký',
+                  'Quay lại',
                   style: TextStyle(
                     decoration: TextDecoration.underline,
-                    color: Color.fromARGB(255, 0, 0, 0),
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -171,6 +149,15 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      hintText: hint,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }

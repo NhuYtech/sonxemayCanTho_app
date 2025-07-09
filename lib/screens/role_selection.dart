@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
+import 'login.dart';
 
-class RoleSelectionScreen extends StatelessWidget {
-  const RoleSelectionScreen({super.key});
+class RoleSelection extends StatelessWidget {
+  const RoleSelection({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class RoleSelectionScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            MaterialPageRoute(builder: (_) => const Login()),
           );
         },
         style: ElevatedButton.styleFrom(
