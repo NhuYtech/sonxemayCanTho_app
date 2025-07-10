@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'role_selection.dart';
 
-class ManagerProfile extends StatelessWidget {
+class ManagerProfileScreen extends StatelessWidget {
   final String fullName;
-  const ManagerProfile({super.key, required this.fullName});
+  const ManagerProfileScreen({super.key, required this.fullName});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,7 @@ class ManagerProfile extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            // Phần trên có logo + tên vai trò + chuông
+            // Header
             Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
@@ -30,7 +30,7 @@ class ManagerProfile extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      fullName, // ✅ Đổi từ 'Quản lý' thành tên thật
+                      fullName,
                       style: const TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
@@ -60,21 +60,6 @@ class ManagerProfile extends StatelessWidget {
           ],
         ),
       ),
-
-      // Navigation bar dưới cùng
-      // bottomNavigationBar: BottomNavigationBar(
-      //   currentIndex: 3,
-      //   type: BottomNavigationBarType.fixed,
-      //   items: const [
-      //     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Đơn hàng'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'CSKH'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
-      //   ],
-      //   onTap: (index) {
-      //     // TODO: Điều hướng tương ứng
-      //   },
-      // ),
     );
   }
 
@@ -104,29 +89,30 @@ class ManagerProfile extends StatelessWidget {
       ),
     );
   }
-}
 
-void _showLogoutDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Xác nhận đăng xuất'),
-      content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Huỷ'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const RoleSelection()),
-              (route) => false,
-            );
-          },
-          child: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Huỷ'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Đóng dialog rồi chuyển về RoleSelection, xoá sạch các màn trước đó
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const RoleSelection()),
+                (route) => false,
+              );
+            },
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'order.dart';
+import 'customer_support.dart';
 
 class ManagerHome extends StatefulWidget {
   final String fullName;
@@ -20,9 +21,9 @@ class _ManagerHomeState extends State<ManagerHome> {
     super.initState();
     _screens = [
       _buildDashboard(), // Trang chủ
-      ManagerOrder(fullName: widget.fullName), // Tạm thời
-      const Center(child: Text('CSKH')), // Tạm thời
-      ManagerProfile(fullName: widget.fullName), // Cá nhân
+      ManagerOrder(fullName: widget.fullName), // Đơn hàng
+      ManagerCustomerSupport(fullName: widget.fullName), // CSKH
+      ManagerProfile(fullName: widget.fullName), // Trang cá nhân
     ];
   }
 
