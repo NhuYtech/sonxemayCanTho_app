@@ -1,7 +1,11 @@
-<!-- android/app/src/main/res/drawable/launch_background.xml -->
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
-        <color android:color="@android:color/white"/>
+        <color android:color="#C54141"/>
     </item>
+    <item
+        android:width="180dp"
+        android:height="180dp"
+        android:drawable="@drawable/launch_image"
+        android:gravity="center"/>
 </layer-list>

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/splash.dart';
+import 'screens/role_selection.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC54141)),
         useMaterial3: true,
       ),
-      home: const Splash(),
+      home: const RoleSelection(),
     );
   }
 }
