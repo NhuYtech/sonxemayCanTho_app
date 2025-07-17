@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ManagerOrder extends StatelessWidget {
-  final String fullName;
-  const ManagerOrder({super.key, required this.fullName});
+  final String name;
+  const ManagerOrder({super.key, required this.name});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class ManagerOrder extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Xin chào,\n$fullName',
+                        'Xin chào,\n$name',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,

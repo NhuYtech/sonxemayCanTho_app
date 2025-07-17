@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 class StaffHome extends StatelessWidget {
-  const StaffHome({super.key});
+  final String name;
+  const StaffHome({super.key, required this.name});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Staff Home')),
-      body: const Center(child: Text('Trang nhân viên')),
-    );
+    return Scaffold(body: Center(child: Text('Xin chào nhân viên: $name')));
   }
 }

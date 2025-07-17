@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'role_selection.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ManagerProfileScreen extends StatelessWidget {
-  final String fullName;
-  const ManagerProfileScreen({super.key, required this.fullName});
+  final String name;
+  const ManagerProfileScreen({super.key, required this.name});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +31,7 @@ class ManagerProfileScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      fullName,
+                      name,
                       style: const TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
@@ -102,8 +103,11 @@ class ManagerProfileScreen extends StatelessWidget {
             child: const Text('Huỷ'),
           ),
           TextButton(
-            onPressed: () {
-              // Đóng dialog rồi chuyển về RoleSelection, xoá sạch các màn trước đó
+            onPressed: () async {
+              // Gọi Firebase logout
+              await FirebaseAuth.instance.signOut();
+
+              // Đóng dialog và quay về RoleSelection
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const RoleSelection()),
                 (route) => false,

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
 class CustomerHome extends StatelessWidget {
-  const CustomerHome({super.key});
+  final String name;
+  const CustomerHome({super.key, required this.name});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Customer Home')),
-      body: const Center(child: Text('Trang khách hàng')),
-    );
+    return Scaffold(body: Center(child: Text('Xin chào khách hàng: $name')));
   }
 }

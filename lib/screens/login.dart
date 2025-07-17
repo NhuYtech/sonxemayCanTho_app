@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'register.dart';
 import 'manager_home.dart';
 import 'staff_home.dart';
 import 'customer_home.dart';
+import 'register.dart';
+import '../service/api_login.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -11,16 +12,81 @@ class Login extends StatefulWidget {
   State<Login> createState() => _LoginState();
 }
 
-// logic UI và xử lý trạng thái
 class _LoginState extends State<Login> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneNumberController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  bool _obscurePassword = true; // nút ẩn/hiển thị mật khẩu
+  bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  @override // ghi đè lại phương thức hàm build từ lớp cha State
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final name = nameController.text.trim();
+      final phone = phoneNumberController.text.trim();
+      final password = passwordController.text.trim();
+
+      final result = await ApiService.login(phone, password);
+
+      if (result['status'] == 200) {
+        final data = result['data'];
+        final role = data['role'];
+
+        if (role == 'manager') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ManagerHome(name: name)),
+          );
+        } else if (role == 'staff') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => StaffHome(name: name)),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => CustomerHome(name: name)),
+          );
+        }
+      } else {
+        _showErrorDialog(
+          result['data']['message'] ?? "Sai tài khoản hoặc mật khẩu",
+        );
+      }
+    } catch (e) {
+      _showErrorDialog("Lỗi kết nối máy chủ.");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Thông báo'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // xây dựng giao diện người dùng
     return Scaffold(
       backgroundColor: const Color(0xFFC1473B),
       body: SafeArea(
@@ -29,11 +95,8 @@ class _LoginState extends State<Login> {
           child: ListView(
             children: [
               const SizedBox(height: 20),
-              // Logo
               Center(child: Image.asset('assets/logo/logo1.png', width: 150)),
               const SizedBox(height: 20),
-
-              // Tên app
               const Center(
                 child: Text(
                   'Sơn xe máy\nCần Thơ',
@@ -46,117 +109,60 @@ class _LoginState extends State<Login> {
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Họ và tên
-              const Text('Họ và tên:', style: TextStyle(color: Colors.white)),
-              const SizedBox(height: 5),
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  hintText: 'Nhập họ tên',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Mật khẩu
-              const Text('Mật khẩu:', style: TextStyle(color: Colors.white)),
-              const SizedBox(height: 5),
-              TextField(
-                controller: passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.white,
-                  hintText: 'Nhập mật khẩu',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      validator: _validateName,
+                      decoration: _inputDecoration('Nhập họ và tên').copyWith(
+                        labelText: 'Họ và tên',
+                        labelStyle: const TextStyle(color: Colors.black),
+                      ),
+                      keyboardType: TextInputType.text,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+
+                    const SizedBox(height: 20),
+
+                    TextFormField(
+                      controller: phoneNumberController,
+                      validator: _validatePhone,
+                      decoration: _inputDecoration('Nhập số điện thoại')
+                          .copyWith(
+                            labelText: 'Số điện thoại',
+                            labelStyle: const TextStyle(color: Colors.black),
+                          ),
+                      keyboardType: TextInputType.phone,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: _obscurePassword,
+                      validator: _validatePassword,
+                      decoration: _inputDecoration('Nhập mật khẩu').copyWith(
+                        labelText: 'Mật khẩu',
+                        labelStyle: const TextStyle(color: Colors.black),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () => setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          }),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 30),
-
-              // Nút Đăng nhập
               ElevatedButton(
-                onPressed: () {
-                  final name = nameController.text;
-                  final password = passwordController.text;
-
-                  if (name.isEmpty || password.isEmpty) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('LỖI'),
-                        content: const Text('Vui lòng nhập đầy đủ thông tin.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('Đóng'),
-                          ),
-                        ],
-                      ),
-                    );
-                  } else {
-                    print('Đăng nhập với: $name - $password');
-
-                    // TODO: Lấy role thật từ MongoDB / Firebase sau này
-                    String role = 'manager'; // Giả lập: thay bằng dữ liệu thật
-
-                    // Điều hướng theo vai trò
-                    if (role == 'manager') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ManagerHome(fullName: name),
-                        ),
-                      );
-                    } else if (role == 'staff') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const StaffHome(),
-                        ),
-                      );
-                    } else if (role == 'customer') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CustomerHome(),
-                        ),
-                      );
-                    } else {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('Lỗi'),
-                          content: const Text('Vai trò không hợp lệ.'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Đóng'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  }
-                },
+                onPressed: _isLoading ? null : _handleLogin,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -164,12 +170,13 @@ class _LoginState extends State<Login> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: const Text(
-                  'Đăng nhập',
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Đăng nhập',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
               ),
-
               const SizedBox(height: 20),
               Row(
                 children: const [
@@ -182,7 +189,6 @@ class _LoginState extends State<Login> {
                 ],
               ),
               const SizedBox(height: 20),
-
               const Center(
                 child: Text(
                   'Nếu bạn chưa có tài khoản\nVui lòng Đăng ký để tiếp tục',
@@ -190,20 +196,18 @@ class _LoginState extends State<Login> {
                   style: TextStyle(color: Colors.white),
                 ),
               ),
-
               TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const Register()),
+                    MaterialPageRoute(builder: (_) => const Register()),
                   );
                 },
-
                 child: const Text(
                   'Đăng ký',
                   style: TextStyle(
                     decoration: TextDecoration.underline,
-                    color: Color.fromARGB(255, 0, 0, 0),
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -212,6 +216,46 @@ class _LoginState extends State<Login> {
           ),
         ),
       ),
+    );
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    final phoneRegex = RegExp(r'^(0|\+84)(3|5|7|8|9)[0-9]{8}$');
+    if (!phoneRegex.hasMatch(value.trim())) {
+      return 'Số điện thoại không hợp lệ';
+    }
+    return null;
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Vui lòng nhập mật khẩu';
+    }
+    if (value.length < 6) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    return null;
+  }
+
+  String? _validateName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Vui lòng nhập họ và tên';
+    }
+    if (value.length < 2) {
+      return 'Họ và tên phải từ 2 ký tự trở lên';
+    }
+    return null;
+  }
+
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      filled: true,
+      fillColor: Colors.white,
+      hintText: hint,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }

@@ -4,8 +4,8 @@ import 'order.dart';
 import 'customer_support.dart';
 
 class ManagerHome extends StatefulWidget {
-  final String fullName;
-  const ManagerHome({super.key, required this.fullName});
+  final String name;
+  const ManagerHome({super.key, required this.name});
 
   @override
   State<ManagerHome> createState() => _ManagerHomeState();
@@ -21,9 +21,9 @@ class _ManagerHomeState extends State<ManagerHome> {
     super.initState();
     _screens = [
       _buildDashboard(), // Trang chủ
-      ManagerOrder(fullName: widget.fullName), // Đơn hàng
-      ManagerCustomerSupport(fullName: widget.fullName), // CSKH
-      ManagerProfile(fullName: widget.fullName), // Trang cá nhân
+      ManagerOrder(name: widget.name), // Đơn hàng
+      ManagerCustomerSupport(name: widget.name), // CSKH
+      ManagerProfile(name: widget.name), // Trang cá nhân
     ];
   }
 
@@ -76,7 +76,7 @@ class _ManagerHomeState extends State<ManagerHome> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Xin chào,\n${widget.fullName}',
+                        'Xin chào,\n${widget.name}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,

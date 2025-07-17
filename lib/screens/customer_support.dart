@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ManagerCustomerSupport extends StatefulWidget {
-  final String fullName;
-  const ManagerCustomerSupport({super.key, required this.fullName});
+  final String name;
+  const ManagerCustomerSupport({super.key, required this.name});
 
   @override
   State<ManagerCustomerSupport> createState() => _ManagerCustomerSupportState();
@@ -65,7 +65,7 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Xin chào,\n${widget.fullName}',
+                        'Xin chào,\n${widget.name}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,

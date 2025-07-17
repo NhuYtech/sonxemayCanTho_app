@@ -1,8 +1,8 @@
 <!-- android/app/src/main/res/values/styles.xml -->
 <resources>
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <!-- THAY ĐỔI dòng này -->
-        <item name="android:windowBackground">@color/splash_red</item>
-        <!-- Thành màu đỏ giống Flutter splash, KHÔNG có logo -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>

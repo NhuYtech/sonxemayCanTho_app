@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'role_selection.dart';
 
 class ManagerProfile extends StatelessWidget {
-  final String fullName;
-  const ManagerProfile({super.key, required this.fullName});
+  final String name;
+  const ManagerProfile({super.key, required this.name});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class ManagerProfile extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      fullName, // ✅ Đổi từ 'Quản lý' thành tên thật
+                      name, // ✅ Đổi từ 'Quản lý' thành tên thật
                       style: const TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
