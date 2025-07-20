@@ -3,7 +3,7 @@ import 'manager_home.dart';
 import 'staff_home.dart';
 import 'customer_home.dart';
 import 'register.dart';
-import '../service/api_login.dart';
+import '../service/auth_service.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -14,8 +14,9 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneNumberController = TextEditingController();
+  final _authService = AuthService();
+  
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
   bool _obscurePassword = true;
@@ -29,15 +30,19 @@ class _LoginState extends State<Login> {
     });
 
     try {
-      final name = nameController.text.trim();
-      final phone = phoneNumberController.text.trim();
-      final password = passwordController.text.trim();
+      final userCredential = await _authService.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-      final result = await ApiService.login(phone, password);
+      if (!mounted) return;
 
-      if (result['status'] == 200) {
-        final data = result['data'];
-        final role = data['role'];
+      // Kiểm tra role từ Custom Claims hoặc Firestore
+      final user = userCredential.user;
+      if (user != null) {
+        // TODO: Lấy role từ Firestore
+        final role = 'customer'; // Tạm thời mặc định là customer
+        final name = user.displayName ?? 'Người dùng';
 
         if (role == 'manager') {
           Navigator.pushReplacement(
@@ -55,17 +60,15 @@ class _LoginState extends State<Login> {
             MaterialPageRoute(builder: (_) => CustomerHome(name: name)),
           );
         }
-      } else {
-        _showErrorDialog(
-          result['data']['message'] ?? "Sai tài khoản hoặc mật khẩu",
-        );
       }
     } catch (e) {
-      _showErrorDialog("Lỗi kết nối máy chủ.");
+      _showErrorDialog(e.toString());
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -114,26 +117,14 @@ class _LoginState extends State<Login> {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: nameController,
-                      validator: _validateName,
-                      decoration: _inputDecoration('Nhập họ và tên').copyWith(
-                        labelText: 'Họ và tên',
+                      controller: emailController,
+                      validator: _validateEmail,
+                      decoration: _inputDecoration('Nhập email').copyWith(
+                        labelText: 'Email',
                         labelStyle: const TextStyle(color: Colors.black),
+                        prefixIcon: const Icon(Icons.email),
                       ),
-                      keyboardType: TextInputType.text,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    TextFormField(
-                      controller: phoneNumberController,
-                      validator: _validatePhone,
-                      decoration: _inputDecoration('Nhập số điện thoại')
-                          .copyWith(
-                            labelText: 'Số điện thoại',
-                            labelStyle: const TextStyle(color: Colors.black),
-                          ),
-                      keyboardType: TextInputType.phone,
+                      keyboardType: TextInputType.emailAddress,
                     ),
 
                     const SizedBox(height: 20),
@@ -219,13 +210,13 @@ class _LoginState extends State<Login> {
     );
   }
 
-  String? _validatePhone(String? value) {
+  String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập số điện thoại';
+      return 'Vui lòng nhập email';
     }
-    final phoneRegex = RegExp(r'^(0|\+84)(3|5|7|8|9)[0-9]{8}$');
-    if (!phoneRegex.hasMatch(value.trim())) {
-      return 'Số điện thoại không hợp lệ';
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Email không hợp lệ';
     }
     return null;
   }
@@ -236,16 +227,6 @@ class _LoginState extends State<Login> {
     }
     if (value.length < 6) {
       return 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    return null;
-  }
-
-  String? _validateName(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập họ và tên';
-    }
-    if (value.length < 2) {
-      return 'Họ và tên phải từ 2 ký tự trở lên';
     }
     return null;
   }

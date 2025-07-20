@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_repair_order.dart';
 
 class StaffHome extends StatelessWidget {
   final String name;
@@ -6,6 +7,20 @@ class StaffHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text('Xin chào nhân viên: $name')));
+    return Scaffold(
+      appBar: AppBar(title: Text('Xin chào, $name')),
+      body: const Center(child: Text('Trang chủ nhân viên')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreateRepairOrderScreen(),
+            ),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
   }
 }

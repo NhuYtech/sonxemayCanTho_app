@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/role_selection.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'screens/login.dart';
+import 'screens/customer_home.dart';
+import 'screens/staff_home.dart';
+import 'screens/manager_home.dart';
 import 'firebase_options.dart';
+import 'service/auth_service.dart';
+import 'service/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,53 +27,42 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC54141)),
         useMaterial3: true,
       ),
-      home: const RoleSelection(),
-    );
-  }
-}
+      home: StreamBuilder<User?>(
+        stream: AuthService().authStateChanges,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+          if (snapshot.hasData) {
+            return FutureBuilder<String>(
+              future: UserService().getCurrentUserRole(),
+              builder: (context, roleSnapshot) {
+                if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-  final String title;
+                final role = roleSnapshot.data ?? 'customer';
+                final name = snapshot.data?.displayName ?? 'Người dùng';
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+                switch (role) {
+                  case 'manager':
+                    return ManagerHome(name: name);
+                  case 'staff':
+                    return StaffHome(name: name);
+                  default:
+                    return CustomerHome(name: name);
+                }
+              },
+            );
+          }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+          return const Login();
+        },
       ),
     );
   }

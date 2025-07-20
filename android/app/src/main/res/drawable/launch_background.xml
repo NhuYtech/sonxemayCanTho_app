@@ -4,8 +4,13 @@
         <color android:color="#C54141"/>
     </item>
     <item
-        android:width="180dp"
-        android:height="180dp"
-        android:drawable="@drawable/launch_image"
-        android:gravity="center"/>
-</layer-list>
+        android:width="150dp"
+        android:height="150dp"
+        android:gravity="center">
+        <bitmap
+            android:src="@drawable/launch_image"
+            android:gravity="center"
+            android:filter="true"
+            android:tileMode="disabled"/>
+    </item>
+</layer-list>     
