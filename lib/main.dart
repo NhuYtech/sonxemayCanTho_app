@@ -6,8 +6,8 @@ import 'screens/customer_home.dart';
 import 'screens/staff_home.dart';
 import 'screens/manager_home.dart';
 import 'firebase_options.dart';
-import 'service/auth_service.dart';
-import 'service/user_service.dart';
+import 'services/auth_service.dart';
+import 'services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
