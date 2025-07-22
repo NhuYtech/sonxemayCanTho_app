@@ -91,49 +91,28 @@ class _RegisterState extends State<Register> {
   }
 
   Widget _buildGoogleSignInButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _handleGoogleSignIn,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black87,
-          elevation: 3,
-          shadowColor: Colors.black26,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        icon: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC1473B)),
-                ),
-              )
-            : Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: NetworkImage(
-                      'https://developers.google.com/identity/images/g-logo.png',
-                    ),
-                    fit: BoxFit.contain,
-                  ),
-                ),
+    return ElevatedButton.icon(
+      onPressed: _isLoading ? null : _handleGoogleSignIn,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        minimumSize: const Size(double.infinity, 50),
+      ),
+      icon: _isLoading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.red,
               ),
-        label: Text(
-          _isLoading ? 'Đang đăng ký...' : 'Đăng ký bằng Google',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
+            )
+          : Image.asset('assets/logo/gg.jpg', width: 24, height: 24),
+      label: Text(
+        _isLoading ? 'Đang đăng ký...' : 'Đăng ký bằng Google',
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
       ),
     );
   }

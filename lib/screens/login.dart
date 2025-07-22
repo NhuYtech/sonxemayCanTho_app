@@ -14,60 +14,40 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
+  bool _isGoogleLoading = false;
 
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-
-  bool _obscurePassword = true;
-  bool _isLoading = false;
-
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
 
     try {
-      final userCredential = await _authService.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
-
+      final userCredential = await _authService.signInWithGoogle();
       if (!mounted) return;
 
-      final user = userCredential.user;
+      final user = userCredential?.user;
       if (user != null) {
-        // ✅ Lấy role từ Firestore
         final role = await UserService().getCurrentUserRole();
         final name = user.displayName ?? 'Người dùng';
 
+        Widget nextScreen;
         if (role == 'manager') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => ManagerHome(name: name)),
-          );
+          nextScreen = ManagerHome(name: name);
         } else if (role == 'staff') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => StaffHome(name: name)),
-          );
+          nextScreen = StaffHome(name: name);
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => CustomerHome(name: name)),
-          );
+          nextScreen = CustomerHome(name: name);
         }
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => nextScreen),
+        );
       }
     } catch (e) {
-      _showErrorDialog(e.toString());
+      _showErrorDialog('Đăng nhập Google thất bại: ${e.toString()}');
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isGoogleLoading = false);
       }
     }
   }
@@ -93,173 +73,103 @@ class _LoginState extends State<Login> {
     return Scaffold(
       backgroundColor: const Color(0xFFC1473B),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: ListView(
-            children: [
-              const SizedBox(height: 20),
-              Center(child: Image.asset('assets/logo/logo1.png', width: 150)),
-              const SizedBox(height: 20),
-              const Center(
-                child: Text(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo
+                Image.asset('assets/logo/logo1.png', width: 180),
+                const SizedBox(height: 30),
+
+                // Tên app
+                const Text(
                   'Sơn Xe Máy\nCần Thơ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 30,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    height: 1.3,
                   ),
                 ),
-              ),
-              const SizedBox(height: 40),
-              Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Email',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: emailController,
-                      validator: _validateEmail,
-                      decoration: _inputDecoration('Nhập email'),
+                const SizedBox(height: 50),
 
-                      keyboardType: TextInputType.emailAddress,
+                // Nút Google
+                ElevatedButton.icon(
+                  onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    const Text(
-                      'Mật khẩu',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: passwordController,
-                      obscureText: _obscurePassword,
-                      validator: _validatePassword,
-                      decoration: _inputDecoration('Nhập mật khẩu').copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off
-                                : Icons.visibility,
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  icon: _isGoogleLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.red,
                           ),
-                          onPressed: () => setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          }),
+                        )
+                      : Container(
+                          width: 24,
+                          height: 24,
+                          decoration: const BoxDecoration(
+                            image: DecorationImage(
+                              image: NetworkImage(
+                                'https://developers.google.com/identity/images/g-logo.png',
+                              ),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleLogin,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Đăng nhập',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: const [
-                  Expanded(child: Divider(color: Colors.white, thickness: 1)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Text(
-                      'hoặc',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                  label: Text(
+                    _isGoogleLoading
+                        ? 'Đang đăng nhập...'
+                        : 'Đăng nhập bằng Google',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Expanded(child: Divider(color: Colors.white, thickness: 1)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              const Center(
-                child: Text(
+                ),
+
+                const SizedBox(height: 50),
+
+                // Chưa có tài khoản
+                const Text(
                   'Nếu bạn chưa có tài khoản\nVui lòng Đăng ký để tiếp tục',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const Register()),
-                  );
-                },
-                icon: const Icon(Icons.app_registration, color: Colors.white),
-                label: const Text(
-                  'Đăng ký',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const Register()),
+                    );
+                  },
+                  icon: const Icon(Icons.app_registration, color: Colors.white),
+                  label: const Text(
+                    'Đăng ký',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Vui lòng nhập email';
-    }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim())) {
-      return 'Email không hợp lệ';
-    }
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Vui lòng nhập mật khẩu';
-    }
-    if (value.length < 6) {
-      return 'Mật khẩu phải có ít nhất 6 ký tự';
-    }
-    return null;
-  }
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      hintText: hint,
-      errorStyle: TextStyle(
-        color: Color(0xFFFFCDD2),
-        fontSize: 13,
-        fontStyle: FontStyle.italic,
-      ),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
 }
