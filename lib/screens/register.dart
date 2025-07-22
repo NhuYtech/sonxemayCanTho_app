@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/api_login.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
@@ -9,12 +11,11 @@ class Register extends StatefulWidget {
 }
 
 class _RegisterState extends State<Register> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-
-  bool _obscurePassword = true;
   bool _isLoading = false;
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   Widget build(BuildContext context) {
@@ -22,58 +23,66 @@ class _RegisterState extends State<Register> {
       backgroundColor: const Color(0xFFC1473B),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
-              Center(child: Image.asset('assets/logo/logo1.png', width: 150)),
-              const SizedBox(height: 20),
-              const Center(
-                child: Text(
-                  'Đăng ký tài khoản',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              const Spacer(),
+
+              // Logo
+              Image.asset('assets/logo/logo1.png', width: 200),
+              const SizedBox(height: 40),
+
+              // Title
+              const Text(
+                'Chào mừng đến với\nSơn Xe Máy Cần Thơ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 30),
-              _buildTextField("Họ và tên", nameController),
-              const SizedBox(height: 20),
-              _buildTextField("Số điện thoại", phoneController, isPhone: true),
-              const SizedBox(height: 20),
-              _buildPasswordField(),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleRegister,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
+              const SizedBox(height: 16),
+
+              // Subtitle
+              Text(
+                'Đăng ký tài khoản để trải nghiệm dịch vụ tốt nhất',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white.withOpacity(0.9),
+                  height: 1.4,
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Đăng ký',
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 60),
+
+              // Google Sign In Button
+              _buildGoogleSignInButton(),
+
+              const Spacer(),
+
+              // Back button
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Quay lại',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.arrow_back, color: Colors.white),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Quay lại',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -81,85 +90,144 @@ class _RegisterState extends State<Register> {
     );
   }
 
-  Widget _buildTextField(
-    String label,
-    TextEditingController controller, {
-    bool isPhone = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.white)),
-        const SizedBox(height: 5),
-        TextField(
-          controller: controller,
-          keyboardType: isPhone ? TextInputType.phone : TextInputType.text,
-          decoration: _inputDecoration('Nhập $label'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Mật khẩu:', style: TextStyle(color: Colors.white)),
-        const SizedBox(height: 5),
-        TextField(
-          controller: passwordController,
-          obscureText: _obscurePassword,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.white,
-            hintText: 'Nhập mật khẩu',
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword ? Icons.visibility_off : Icons.visibility,
-              ),
-              onPressed: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  Widget _buildGoogleSignInButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : _handleGoogleSignIn,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
+          elevation: 3,
+          shadowColor: Colors.black26,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
-      ],
+        icon: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC1473B)),
+                ),
+              )
+            : Container(
+                width: 24,
+                height: 24,
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(
+                      'https://developers.google.com/identity/images/g-logo.png',
+                    ),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+        label: Text(
+          _isLoading ? 'Đang đăng ký...' : 'Đăng ký bằng Google',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      filled: true,
-      fillColor: Colors.white,
-      hintText: hint,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-    );
-  }
-
-  Future<void> _handleRegister() async {
-    final name = nameController.text.trim();
-    final phone = phoneController.text.trim();
-    final password = passwordController.text.trim();
-
-    if (name.isEmpty || phone.isEmpty || password.isEmpty) {
-      _showDialog("Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
-
+  Future<void> _handleGoogleSignIn() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final result = await ApiService.register(name, phone, password);
+      // Đăng xuất tài khoản Google hiện tại (nếu có) để cho phép chọn tài khoản
+      await _googleSignIn.signOut();
 
-      if (result['status'] == 200 || result['status'] == 201) {
-        _showDialog("Đăng ký thành công!");
-      } else {
-        _showDialog("Đăng ký thất bại: ${result['data']['message']}");
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        // User canceled the sign-in
+        setState(() {
+          _isLoading = false;
+        });
+        return;
       }
-    } catch (e) {
-      _showDialog("Lỗi kết nối máy chủ.");
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the Google credentials
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // Check if this is a new user or existing user
+        final bool isNewUser =
+            userCredential.additionalUserInfo?.isNewUser ?? false;
+
+        // Save or update user data to Firestore
+        await _saveUserToFirestore(user, isNewUser);
+
+        if (isNewUser) {
+          _showDialog(
+            "Đăng ký thành công!",
+            "Chào mừng ${user.displayName ?? 'bạn'} đến với Sơn Xe Máy Cần Thơ!",
+            isSuccess: true,
+          );
+        } else {
+          _showDialog(
+            "Đăng nhập thành công!",
+            "Chào mừng bạn quay lại!",
+            isSuccess: true,
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = "Đăng ký thất bại!";
+      String details = "";
+
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          message = "Tài khoản đã tồn tại";
+          details = "Email này đã được đăng ký bằng phương thức khác.";
+          break;
+        case 'invalid-credential':
+          message = "Thông tin xác thực không hợp lệ";
+          details = "Vui lòng thử lại.";
+          break;
+        case 'operation-not-allowed':
+          message = "Đăng nhập Google chưa được kích hoạt";
+          details = "Vui lòng liên hệ quản trị viên.";
+          break;
+        case 'user-disabled':
+          message = "Tài khoản đã bị khóa";
+          details = "Vui lòng liên hệ hỗ trợ.";
+          break;
+        default:
+          details = e.message ?? "Vui lòng thử lại sau.";
+      }
+
+      _showDialog(message, details);
+    } catch (error) {
+      print('Error during Google Sign In: $error');
+      _showDialog(
+        "Lỗi kết nối",
+        "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.",
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -167,24 +235,86 @@ class _RegisterState extends State<Register> {
     }
   }
 
-  void _showDialog(String message) {
+  Future<void> _saveUserToFirestore(User user, bool isNewUser) async {
+    try {
+      final userDoc = _firestore.collection('users').doc(user.uid);
+
+      if (isNewUser) {
+        // New user - create document
+        await userDoc.set({
+          'uid': user.uid,
+          'name': user.displayName ?? 'User',
+          'email': user.email ?? '',
+          'phone': '', // User có thể cập nhật sau
+          'photoURL': user.photoURL ?? '',
+          'role': 'customer', // Mặc định là customer
+          'createdAt': FieldValue.serverTimestamp(),
+          'lastLoginAt': FieldValue.serverTimestamp(),
+          'loginMethod': 'google',
+        });
+      } else {
+        // Existing user - update last login time
+        await userDoc.update({'lastLoginAt': FieldValue.serverTimestamp()});
+      }
+    } catch (e) {
+      print('Error saving user to Firestore: $e');
+    }
+  }
+
+  void _showDialog(String title, String message, {bool isSuccess = false}) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Thông báo"),
-        content: Text(message),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(
+              isSuccess ? Icons.check_circle : Icons.error,
+              color: isSuccess ? Colors.green : Colors.red,
+              size: 28,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: isSuccess ? Colors.green : Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Text(message, style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
-              if (message.contains("thành công")) {
-                Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              if (isSuccess) {
+                Navigator.pop(context); // Go back to previous screen
               }
             },
-            child: const Text("OK"),
+            style: TextButton.styleFrom(
+              backgroundColor: isSuccess
+                  ? Colors.green
+                  : const Color(0xFFC1473B),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "OK",
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }

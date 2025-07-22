@@ -102,7 +102,7 @@ class _LoginState extends State<Login> {
               const SizedBox(height: 20),
               const Center(
                 child: Text(
-                  'Sơn xe máy\nCần Thơ',
+                  'Sơn Xe Máy\nCần Thơ',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
@@ -174,7 +174,10 @@ class _LoginState extends State<Login> {
                   Expanded(child: Divider(color: Colors.white, thickness: 1)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Text('hoặc', style: TextStyle(color: Colors.white)),
+                    child: Text(
+                      'hoặc',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ),
                   Expanded(child: Divider(color: Colors.white, thickness: 1)),
                 ],
@@ -184,22 +187,23 @@ class _LoginState extends State<Login> {
                 child: Text(
                   'Nếu bạn chưa có tài khoản\nVui lòng Đăng ký để tiếp tục',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
-              TextButton(
+              TextButton.icon(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const Register()),
                   );
                 },
-                child: const Text(
+                icon: const Icon(Icons.app_registration, color: Colors.white),
+                label: const Text(
                   'Đăng ký',
                   style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    color: Colors.black,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
               ),
