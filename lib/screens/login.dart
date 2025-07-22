@@ -115,27 +115,41 @@ class _LoginState extends State<Login> {
               Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      'Email',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: emailController,
                       validator: _validateEmail,
-                      decoration: _inputDecoration('Nhập email').copyWith(
-                        labelText: 'Email',
-                        labelStyle: const TextStyle(color: Colors.black),
-                        prefixIcon: const Icon(Icons.email),
-                      ),
+                      decoration: _inputDecoration('Nhập email'),
+
                       keyboardType: TextInputType.emailAddress,
                     ),
 
                     const SizedBox(height: 20),
 
+                    const Text(
+                      'Mật khẩu',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
                     TextFormField(
                       controller: passwordController,
                       obscureText: _obscurePassword,
                       validator: _validatePassword,
                       decoration: _inputDecoration('Nhập mật khẩu').copyWith(
-                        labelText: 'Mật khẩu',
-                        labelStyle: const TextStyle(color: Colors.black),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
@@ -240,6 +254,11 @@ class _LoginState extends State<Login> {
       filled: true,
       fillColor: Colors.white,
       hintText: hint,
+      errorStyle: TextStyle(
+        color: Color(0xFFFFCDD2),
+        fontSize: 13,
+        fontStyle: FontStyle.italic,
+      ),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
     );
   }
