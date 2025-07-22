@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'manager_home.dart';
-import 'staff_home.dart';
-import 'customer_home.dart';
+import 'manager/manager_home.dart';
+import 'employee/employee_home.dart';
+import 'customer/customer_home.dart';
 import 'register.dart';
-import '../service/auth_service.dart';
+import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -15,7 +16,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
-  
+
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -37,11 +38,10 @@ class _LoginState extends State<Login> {
 
       if (!mounted) return;
 
-      // Kiểm tra role từ Custom Claims hoặc Firestore
       final user = userCredential.user;
       if (user != null) {
-        // TODO: Lấy role từ Firestore
-        final role = 'customer'; // Tạm thời mặc định là customer
+        // ✅ Lấy role từ Firestore
+        final role = await UserService().getCurrentUserRole();
         final name = user.displayName ?? 'Người dùng';
 
         if (role == 'manager') {

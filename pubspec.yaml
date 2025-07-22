@@ -17,12 +17,23 @@ dependencies:
   firebase_auth: ^4.16.0
   cloud_firestore: ^4.14.0
   firebase_storage: ^11.6.0
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
+
+
+flutter_native_splash:
+  color: "#C54141"
+  image: assets/logo/logo1.png
+  branding: null
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
 
 
 flutter_icons:

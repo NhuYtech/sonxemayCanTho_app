@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import 'widgets/firebase_options.dart';
 import 'screens/login.dart';
-import 'screens/customer_home.dart';
-import 'screens/staff_home.dart';
-import 'screens/manager_home.dart';
-import 'firebase_options.dart';
+import 'screens/customer/customer_home.dart';
+import 'screens/employee/employee_home.dart';
+import 'screens/manager/manager_home.dart';
+import 'screens/role_selection.dart';
 import 'services/auth_service.dart';
 import 'services/user_service.dart';
 
@@ -22,6 +24,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sơn Xe Máy Cần Thơ',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         fontFamily: 'Itim',
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFC54141)),
@@ -49,19 +52,18 @@ class MyApp extends StatelessWidget {
                 final role = roleSnapshot.data ?? 'customer';
                 final name = snapshot.data?.displayName ?? 'Người dùng';
 
-                switch (role) {
-                  case 'manager':
-                    return ManagerHome(name: name);
-                  case 'staff':
-                    return StaffHome(name: name);
-                  default:
-                    return CustomerHome(name: name);
+                if (role == 'manager') {
+                  return ManagerHome(name: name);
+                } else if (role == 'staff') {
+                  return StaffHome(name: name);
+                } else {
+                  return CustomerHome(name: name);
                 }
               },
             );
           }
 
-          return const Login();
+          return const RoleSelection();
         },
       ),
     );
