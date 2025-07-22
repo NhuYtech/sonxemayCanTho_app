@@ -109,7 +109,18 @@ class _RegisterState extends State<Register> {
                 color: Colors.red,
               ),
             )
-          : Image.asset('assets/logo/gg.jpg', width: 24, height: 24),
+          : Container(
+              width: 24,
+              height: 24,
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: NetworkImage(
+                    'https://developers.google.com/identity/images/g-logo.png',
+                  ),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
       label: Text(
         _isLoading ? 'Đang đăng ký...' : 'Đăng ký bằng Google',
         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),

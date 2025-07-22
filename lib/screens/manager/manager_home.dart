@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../profile.dart';
+import '../common_profile.dart';
 import '../customer/order.dart';
 import '../customer/customer_support.dart';
 
@@ -23,7 +23,7 @@ class _ManagerHomeState extends State<ManagerHome> {
       _buildDashboard(), // Trang chủ
       ManagerOrder(name: widget.name), // Đơn hàng
       ManagerCustomerSupport(name: widget.name), // CSKH
-      ManagerProfile(name: widget.name), // Trang cá nhân
+      CommonProfile(name: widget.name, role: 'manager'), // Trang cá nhân
     ];
   }
 

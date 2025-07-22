@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'role_selection.dart';
 
-class ManagerProfile extends StatelessWidget {
+class CommonProfile extends StatelessWidget {
   final String name;
-  const ManagerProfile({super.key, required this.name});
+  final String role;
+
+  const CommonProfile({super.key, required this.name, required this.role});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +32,7 @@ class ManagerProfile extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      name, // ✅ Đổi từ 'Quản lý' thành tên thật
+                      name,
                       style: const TextStyle(color: Colors.white, fontSize: 20),
                     ),
                   ),
@@ -48,7 +50,9 @@ class ManagerProfile extends StatelessWidget {
                   children: [
                     _buildTile(Icons.person, 'Xem thông tin', () {}),
                     _buildTile(Icons.edit, 'Chỉnh sửa thông tin', () {}),
-                    _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {}),
+                    if (role !=
+                        'customer') // ✅ chỉ staff/manager mới có ghi chú
+                      _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {}),
                     _buildTile(Icons.lock, 'Đổi mật khẩu', () {}),
                     _buildTile(Icons.logout, 'Đăng xuất', () {
                       _showLogoutDialog(context);
@@ -60,21 +64,6 @@ class ManagerProfile extends StatelessWidget {
           ],
         ),
       ),
-
-      // Navigation bar dưới cùng
-      // bottomNavigationBar: BottomNavigationBar(
-      //   currentIndex: 3,
-      //   type: BottomNavigationBarType.fixed,
-      //   items: const [
-      //     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Đơn hàng'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'CSKH'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
-      //   ],
-      //   onTap: (index) {
-      //     // TODO: Điều hướng tương ứng
-      //   },
-      // ),
     );
   }
 
