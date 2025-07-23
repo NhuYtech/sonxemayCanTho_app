@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
 import 'login_staff.dart';
+import 'login.dart';
 
 class RoleSelection extends StatelessWidget {
   const RoleSelection({super.key});
@@ -13,7 +13,7 @@ class RoleSelection extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/logo/logo1.png'),
+            Image.asset('assets/logo/logo1.png', width: 180),
             const SizedBox(height: 20),
             const Text(
               'Xin chào,\nSơn Xe Máy Cần Thơ',

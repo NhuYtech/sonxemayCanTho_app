@@ -12,33 +12,25 @@ class CustomerHome extends StatefulWidget {
 class _CustomerHomeState extends State<CustomerHome> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    Center(child: Text('Trang chủ khách hàng')),
-    Center(child: Text('Đơn hàng')),
-    Center(child: Text('Tài khoản')),
-  ];
+  // Trang tương ứng với từng tab
+  late final List<Widget> _pages;
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  String _getAppBarTitle() {
-    if (_selectedIndex == 0) {
-      return 'Trang chủ';
-    } else if (_selectedIndex == 1) {
-      return 'Đơn hàng';
-    } else {
-      return 'Tài khoản';
-    }
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      _buildHomeTab(),
+      const Center(child: Text('📦 Danh sách đơn hàng')),
+      const Center(child: Text('💬 Tin nhắn')),
+      CommonProfile(name: widget.name, role: 'customer'),
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _buildBody(),
+      body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (int index) {
@@ -56,18 +48,6 @@ class _CustomerHomeState extends State<CustomerHome> {
         ],
       ),
     );
-  }
-
-  Widget _buildBody() {
-    if (_selectedIndex == 0) {
-      return _buildHomeTab();
-    } else if (_selectedIndex == 1) {
-      return const Center(child: Text('📦 Danh sách đơn hàng'));
-    } else if (_selectedIndex == 2) {
-      return const Center(child: Text('💬 Tin nhắn'));
-    } else {
-      return CommonProfile(name: widget.name, role: 'customer');
-    }
   }
 
   Widget _buildHomeTab() {
@@ -122,7 +102,6 @@ class _CustomerHomeState extends State<CustomerHome> {
               ],
             ),
           ),
-
           const SizedBox(height: 16),
 
           // 🔻 Nội dung chính
