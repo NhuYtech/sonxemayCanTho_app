@@ -10,54 +10,94 @@ class CommonProfile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFC1473B),
+      backgroundColor: Colors.white, // Set the scaffold background to white
       body: SafeArea(
-        child: Column(
+        child: Stack(
+          // Use Stack to allow overlapping widgets
           children: [
-            // Phần trên có logo + tên vai trò + chuông
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: Color(0xFFC1473B),
-                borderRadius: BorderRadius.vertical(
-                  bottom: Radius.circular(30),
+            Column(
+              children: [
+                // Phần trên có logo + tên vai trò + chuông (màu đỏ - KHÔNG BO TRÒN)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 32,
+                    horizontal: 16,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFC1473B), // Original red color
+                    // borderRadius: BorderRadius.vertical( // This was removed in previous step, confirming it's still commented/removed
+                    //   bottom: Radius.circular(30),
+                    // ),
+                  ),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        backgroundImage: AssetImage('assets/logo/logo1.png'),
+                        radius: 30,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.notifications, color: Colors.yellow),
+                    ],
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    backgroundImage: AssetImage('assets/logo/logo1.png'),
-                    radius: 30,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: const TextStyle(color: Colors.white, fontSize: 20),
-                    ),
-                  ),
-                  const Icon(Icons.notifications, color: Colors.yellow),
-                ],
-              ),
+
+                // Khoảng trắng bên dưới phần màu đỏ (để lấp đầy không gian còn lại)
+                Expanded(child: Container(color: Colors.white)),
+              ],
             ),
 
-            // Danh sách chức năng
-            Expanded(
-              child: Container(
-                color: Colors.grey.shade200,
-                padding: const EdgeInsets.all(16),
-                child: ListView(
-                  children: [
-                    _buildTile(Icons.person, 'Xem thông tin', () {}),
-                    _buildTile(Icons.edit, 'Chỉnh sửa thông tin', () {}),
-                    if (role !=
-                        'customer') // chỉ employee/manager mới có ghi chú
-                      _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {}),
-                    _buildTile(Icons.lock, 'Đổi mật khẩu', () {}),
-                    _buildTile(Icons.logout, 'Đăng xuất', () {
-                      _showLogoutDialog(context);
-                    }),
-                  ],
+            // Phần Card chứa form, nằm đè lên (overlapped)
+            Positioned(
+              // Adjust this 'top' value to control how much it overlaps.
+              // A smaller value moves it higher, increasing overlap.
+              // 100 is an example, you can fine-tune it.
+              top: 100,
+              left: 16,
+              right: 16,
+              child: Card(
+                color:
+                    Colors.grey.shade100, // Light grey for the form background
+                elevation: 4, // Shadow for the card
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(
+                    15,
+                  ), // Rounded corners for the card
+                ),
+                margin: EdgeInsets
+                    .zero, // Remove default card margin to let Positioned control spacing
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8.0,
+                  ), // Padding inside the card around the ListView
+                  child: ListView(
+                    physics:
+                        const NeverScrollableScrollPhysics(), // Prevent scrolling if content fits
+                    shrinkWrap: true, // Make ListView only take up needed space
+                    children: [
+                      _buildTile(Icons.person, 'Xem thông tin', () {}),
+                      _buildTile(Icons.edit, 'Chỉnh sửa thông tin', () {}),
+                      if (role !=
+                          'customer') // chỉ employee/manager mới có ghi chú
+                        _buildTile(
+                          Icons.feedback,
+                          'Ghi chú và phản hồi',
+                          () {},
+                        ),
+                      _buildTile(Icons.lock, 'Đổi mật khẩu', () {}),
+                      _buildTile(Icons.logout, 'Đăng xuất', () {
+                        _showLogoutDialog(context);
+                      }),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -69,9 +109,12 @@ class CommonProfile extends StatelessWidget {
 
   Widget _buildTile(IconData icon, String title, VoidCallback onTap) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(
+        vertical: 6,
+        horizontal: 16,
+      ), // Horizontal margin for tiles within the card
       child: Material(
-        color: const Color(0xFFD34C45),
+        color: const Color(0xFFB3E5FC), // Light blue for tile background
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -80,11 +123,11 @@ class CommonProfile extends StatelessWidget {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white),
+                Icon(icon, color: Colors.black),
                 const SizedBox(width: 16),
                 Text(
                   title,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  style: const TextStyle(color: Colors.black, fontSize: 16),
                 ),
               ],
             ),

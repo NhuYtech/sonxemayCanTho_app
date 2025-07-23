@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 
 async function run() {
-  const password = "Abc@1234";
+  const password = "Admin@123";
   const saltRounds = 10;
 
   const hashed = await bcrypt.hash(password, saltRounds);

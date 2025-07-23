@@ -41,104 +41,105 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 222, 96, 85),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+    return Scaffold(
+      backgroundColor: Colors.grey.shade300, // Background for the chat area
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header (Red, rectangular, NO rounded corners)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFC1473B), // Red color
+                // *** IMPORTANT: There is NO 'borderRadius' property here. ***
+                // This ensures the container is a perfect rectangle at the bottom.
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundImage: AssetImage('assets/logo/logo1.png'),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Xin chào,\n${widget.name}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    backgroundImage: AssetImage('assets/logo/logo1.png'),
+                    radius: 30,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      'Xin chào,\n${widget.name}', // Reverted to "Xin chào," + name
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18, // Adjusted font size to fit "Xin chào,\n"
                       ),
-                    ),
-                    const Icon(Icons.notifications, color: Colors.yellow),
-                  ],
-                ),
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
-
-          // Nội dung tin nhắn
-          Expanded(
-            child: Container(
-              color: Colors.grey.shade300,
-              child: ListView(
-                padding: const EdgeInsets.all(12),
-                children: _messages.map((msg) {
-                  return Align(
-                    alignment: msg['isMe']
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      padding: const EdgeInsets.all(12),
-                      constraints: const BoxConstraints(maxWidth: 280),
-                      decoration: BoxDecoration(
-                        color: msg['isMe']
-                            ? Colors.lightBlueAccent
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        msg['text'],
-                        style: const TextStyle(fontSize: 15),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-
-          // Ô nhập tin nhắn
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'Tin nhắn...',
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(fontFamily: 'Itim'),
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.red),
-                  onPressed: _sendMessage,
-                ),
-              ],
+                  const Icon(Icons.notifications, color: Colors.yellow),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Nội dung tin nhắn
+            Expanded(
+              child: Container(
+                color: Colors.grey.shade300, // Background for chat messages
+                child: ListView.builder(
+                  reverse: true, // Show latest messages at the bottom
+                  padding: const EdgeInsets.all(12),
+                  itemCount: _messages.length,
+                  itemBuilder: (context, index) {
+                    final msg = _messages[index];
+                    return Align(
+                      alignment: msg['isMe']
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.all(12),
+                        constraints: const BoxConstraints(maxWidth: 280),
+                        decoration: BoxDecoration(
+                          color: msg['isMe']
+                              ? Colors.lightBlueAccent
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          msg['text'],
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Ô nhập tin nhắn
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Tin nhắn...',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(fontFamily: 'Itim'),
+                      ),
+                      onSubmitted: (_) =>
+                          _sendMessage(), // Allows sending with enter key
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send, color: Colors.red),
+                    onPressed: _sendMessage,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

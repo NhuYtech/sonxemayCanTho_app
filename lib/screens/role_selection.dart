@@ -45,15 +45,20 @@ class RoleSelection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
       child: ElevatedButton(
         onPressed: () {
-          if (role == 'Nhân viên') {
+          if (role == 'Khách hàng') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const Login()),
+            );
+          } else if (role == 'Nhân viên') {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const LoginStaff()),
             );
-          } else {
+          } else if (role == 'Quản lý') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const Login()),
+              MaterialPageRoute(builder: (_) => const LoginStaff()),
             );
           }
         },
