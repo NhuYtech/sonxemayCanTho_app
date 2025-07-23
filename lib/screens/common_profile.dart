@@ -51,7 +51,7 @@ class CommonProfile extends StatelessWidget {
                     _buildTile(Icons.person, 'Xem thông tin', () {}),
                     _buildTile(Icons.edit, 'Chỉnh sửa thông tin', () {}),
                     if (role !=
-                        'customer') // ✅ chỉ staff/manager mới có ghi chú
+                        'customer') // chỉ employee/manager mới có ghi chú
                       _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {}),
                     _buildTile(Icons.lock, 'Đổi mật khẩu', () {}),
                     _buildTile(Icons.logout, 'Đăng xuất', () {

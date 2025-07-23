@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'widgets/firebase_options.dart';
 import 'screens/customer/customer_home.dart';
-import 'screens/employee/employee_home.dart';
+import 'screens/staff/staff_home.dart';
 import 'screens/manager/manager_home.dart';
 import 'screens/role_selection.dart';
 import 'services/auth_service.dart';
@@ -66,7 +66,6 @@ class MyApp extends StatelessWidget {
                   case 'manager':
                     return ManagerHome(name: name);
                   case 'staff':
-                  case 'employee':
                     return StaffHome(name: name);
                   case 'customer':
                   default:

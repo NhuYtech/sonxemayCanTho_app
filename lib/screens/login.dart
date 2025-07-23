@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'manager/manager_home.dart';
-import 'employee/employee_home.dart';
+import 'staff/staff_home.dart';
 import 'customer/customer_home.dart';
 import 'register.dart';
 import '../services/auth_service.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
+import 'login_staff.dart';
 
 class RoleSelection extends StatelessWidget {
   const RoleSelection({super.key});
@@ -12,7 +13,6 @@ class RoleSelection extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo
             Image.asset('assets/logo/logo1.png'),
             const SizedBox(height: 20),
             const Text(
@@ -45,10 +45,17 @@ class RoleSelection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
       child: ElevatedButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const Login()),
-          );
+          if (role == 'Nhân viên') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginStaff()),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const Login()),
+            );
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
@@ -60,7 +67,7 @@ class RoleSelection extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.person, color: Colors.black),
+            const Icon(Icons.person, color: Colors.black),
             const SizedBox(width: 10),
             Text(
               role,
