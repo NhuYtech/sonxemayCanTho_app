@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'login_staff.dart';
+import 'package:sonxemaycantho/screens/login_Internal_User.dart';
+import 'package:sonxemaycantho/screens/login_internal_user.dart'
+    hide LoginInternalUser;
 import 'login.dart';
 
 class RoleSelection extends StatelessWidget {
@@ -53,12 +55,12 @@ class RoleSelection extends StatelessWidget {
           } else if (role == 'Nhân viên') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const LoginStaff()),
+              MaterialPageRoute(builder: (_) => const LoginInternalUser()),
             );
           } else if (role == 'Quản lý') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const LoginStaff()),
+              MaterialPageRoute(builder: (_) => const LoginInternalUser()),
             );
           }
         },

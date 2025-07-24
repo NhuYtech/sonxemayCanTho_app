@@ -4,19 +4,20 @@ import 'staff/staff_home.dart';
 import 'manager/manager_home.dart';
 import '../services/account_service.dart';
 
-class LoginStaff extends StatefulWidget {
-  const LoginStaff({super.key});
+class LoginInternalUser extends StatefulWidget {
+  const LoginInternalUser({super.key});
 
   @override
-  State<LoginStaff> createState() => _LoginStaffState();
+  State<LoginInternalUser> createState() => _LoginInternalUserState();
 }
 
-class _LoginStaffState extends State<LoginStaff> {
+class _LoginInternalUserState extends State<LoginInternalUser> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AccountService _accountService = AccountService();
 
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   Future<void> _handleLoginWithAccount() async {
     final phone = _phoneController.text.trim();
@@ -84,6 +85,7 @@ class _LoginStaffState extends State<LoginStaff> {
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
@@ -167,10 +169,22 @@ class _LoginStaffState extends State<LoginStaff> {
                 const SizedBox(height: 6),
                 TextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     hintText: 'Nhập mật khẩu',
                     prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
                     hintStyle: const TextStyle(color: Colors.grey),
                     filled: true,
                     fillColor: Colors.white,
@@ -216,6 +230,21 @@ class _LoginStaffState extends State<LoginStaff> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    label: const Text(
+                      'Quay lại',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ],

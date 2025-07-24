@@ -148,20 +148,38 @@ class _LoginState extends State<Login> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontSize: 16),
                 ),
-                TextButton.icon(
+
+                TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const Register()),
                     );
                   },
-                  icon: const Icon(Icons.app_registration, color: Colors.white),
-                  label: const Text(
+                  child: const Text(
                     'Đăng ký',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.white,
+                      decorationThickness: 1.5,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    label: const Text(
+                      'Quay lại',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ),
