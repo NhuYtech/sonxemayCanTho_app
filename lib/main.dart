@@ -6,9 +6,9 @@ import 'widgets/firebase_options.dart';
 import 'screens/customer/customer_home.dart';
 import 'screens/staff/staff_home.dart';
 import 'screens/manager/manager_home.dart';
-import 'screens/role_selection.dart';
-import 'services/auth_service.dart';
-import 'services/user_service.dart';
+import 'screens/role.dart';
+import 'services/auth.dart';
+import 'services/user.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

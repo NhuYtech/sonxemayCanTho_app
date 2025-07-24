@@ -3,8 +3,8 @@ import 'manager/manager_home.dart';
 import 'staff/staff_home.dart';
 import 'customer/customer_home.dart';
 import 'register.dart';
-import '../services/auth_service.dart';
-import '../services/user_service.dart';
+import '../services/auth.dart';
+import '../services/user.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -21,11 +21,12 @@ class _LoginState extends State<Login> {
     setState(() => _isGoogleLoading = true);
 
     try {
-      final userCredential = await _authService.signInWithGoogle();
-      if (!mounted) return;
+      // Thay đổi ở đây: signInWithGoogle giờ đây trả về User? trực tiếp
+      final user = await _authService.signInWithGoogle();
+      if (!mounted) return; // Kiểm tra mounted sau await
 
-      final user = userCredential?.user;
       if (user != null) {
+        // Lấy vai trò và tên người dùng
         final role = await UserService().getCurrentUserRole();
         final name = user.displayName ?? 'Người dùng';
 
@@ -38,10 +39,14 @@ class _LoginState extends State<Login> {
           nextScreen = CustomerHome(name: name);
         }
 
+        // Điều hướng đến màn hình phù hợp
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => nextScreen),
         );
+      } else {
+        // Xử lý trường hợp người dùng hủy đăng nhập hoặc đăng nhập thất bại
+        _showErrorDialog('Đăng nhập Google không thành công hoặc đã bị hủy.');
       }
     } catch (e) {
       _showErrorDialog('Đăng nhập Google thất bại: ${e.toString()}');

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'role_selection.dart';
+import 'package:sonxemaycantho/services/auth.dart'; // Import AuthService
+import 'package:sonxemaycantho/screens/role.dart'; // Import RoleSelection
+import 'package:sonxemaycantho/widgets/profile_header.dart'; // Import ProfileHeader mới
 
 class CommonProfile extends StatelessWidget {
   final String name;
@@ -17,38 +19,8 @@ class CommonProfile extends StatelessWidget {
           children: [
             Column(
               children: [
-                // Phần trên có logo + tên vai trò + chuông (màu đỏ - KHÔNG BO TRÒN)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 32,
-                    horizontal: 16,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFC1473B), // Original red color
-                    // borderRadius: BorderRadius.vertical( // This was removed in previous step, confirming it's still commented/removed
-                    //   bottom: Radius.circular(30),
-                    // ),
-                  ),
-                  child: Row(
-                    children: [
-                      const CircleAvatar(
-                        backgroundImage: AssetImage('assets/logo/logo1.png'),
-                        radius: 30,
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.notifications, color: Colors.yellow),
-                    ],
-                  ),
-                ),
+                // Sử dụng ProfileHeader widget mới thay vì Container cũ
+                ProfileHeader(name: name, role: role),
 
                 // Khoảng trắng bên dưới phần màu đỏ (để lấp đầy không gian còn lại)
                 Expanded(child: Container(color: Colors.white)),
@@ -59,8 +31,8 @@ class CommonProfile extends StatelessWidget {
             Positioned(
               // Adjust this 'top' value to control how much it overlaps.
               // A smaller value moves it higher, increasing overlap.
-              // 100 is an example, you can fine-tune it.
-              top: 100,
+              top:
+                  100, // Giá trị này có thể cần điều chỉnh để phù hợp với ProfileHeader mới
               left: 16,
               right: 16,
               child: Card(
@@ -83,16 +55,24 @@ class CommonProfile extends StatelessWidget {
                         const NeverScrollableScrollPhysics(), // Prevent scrolling if content fits
                     shrinkWrap: true, // Make ListView only take up needed space
                     children: [
-                      _buildTile(Icons.person, 'Xem thông tin', () {}),
-                      _buildTile(Icons.edit, 'Chỉnh sửa thông tin', () {}),
+                      _buildTile(Icons.person, 'Xem thông tin', () {
+                        // TODO: Navigate to View Profile screen
+                        print('Xem thông tin tapped!');
+                      }),
+                      _buildTile(Icons.edit, 'Chỉnh sửa thông tin', () {
+                        // TODO: Navigate to Edit Profile screen
+                        print('Chỉnh sửa thông tin tapped!');
+                      }),
                       if (role !=
                           'customer') // chỉ employee/manager mới có ghi chú
-                        _buildTile(
-                          Icons.feedback,
-                          'Ghi chú và phản hồi',
-                          () {},
-                        ),
-                      _buildTile(Icons.lock, 'Đổi mật khẩu', () {}),
+                        _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {
+                          // TODO: Navigate to Feedback screen
+                          print('Ghi chú và phản hồi tapped!');
+                        }),
+                      _buildTile(Icons.lock, 'Đổi mật khẩu', () {
+                        // TODO: Navigate to Change Password screen
+                        print('Đổi mật khẩu tapped!');
+                      }),
                       _buildTile(Icons.logout, 'Đăng xuất', () {
                         _showLogoutDialog(context);
                       }),
@@ -107,6 +87,7 @@ class CommonProfile extends StatelessWidget {
     );
   }
 
+  /// Helper method to build a tile for the profile options.
   Widget _buildTile(IconData icon, String title, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.symmetric(
@@ -136,29 +117,35 @@ class CommonProfile extends StatelessWidget {
       ),
     );
   }
-}
 
-void _showLogoutDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Xác nhận đăng xuất'),
-      content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Huỷ'),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (_) => const RoleSelection()),
-              (route) => false,
-            );
-          },
-          child: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
+  /// Shows a confirmation dialog for logging out.
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Huỷ'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Thực hiện đăng xuất
+              await AuthService().signOut();
+              if (context.mounted) {
+                // Điều hướng về màn hình chọn vai trò và xóa tất cả các route trước đó
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const RoleSelection()),
+                  (route) => false,
+                );
+              }
+            },
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 }

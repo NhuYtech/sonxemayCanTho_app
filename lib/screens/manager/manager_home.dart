@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import '../common_profile.dart';
+import '../profile.dart';
 import '../customer/order.dart';
 import '../customer/customer_support.dart';
+import '../../widgets/header.dart';
+import 'dashboard.dart';
 
 class ManagerHome extends StatefulWidget {
   final String name;
@@ -12,36 +14,66 @@ class ManagerHome extends StatefulWidget {
 }
 
 class _ManagerHomeState extends State<ManagerHome> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Index của tab được chọn trong BottomNavigationBar
 
-  late List<Widget> _screens;
+  late List<Widget> _screens; // Danh sách các màn hình tương ứng với mỗi tab
+
+  // Dữ liệu giả định cho các thẻ thống kê.
+  // Trong ứng dụng thực tế, bạn sẽ fetch dữ liệu này từ API hoặc database.
+  String _revenue = '120,000,000 VND';
+  String _totalOrders = '530';
+  String _stockQuantity = '1,250 sản phẩm';
+  String _damagedItems = '15 sản phẩm';
+  String _customerCount = '870 khách hàng';
 
   @override
   void initState() {
     super.initState();
+    // Khởi tạo danh sách các màn hình khi widget được tạo
     _screens = [
-      _buildDashboard(), // Trang chủ
-      ManagerOrder(name: widget.name), // Đơn hàng
-      ManagerCustomerSupport(name: widget.name), // CSKH
-      CommonProfile(name: widget.name, role: 'manager'), // Trang cá nhân
+      _buildDashboard(), // Tab "Trang chủ"
+      ManagerOrder(name: widget.name), // Tab "Đơn hàng"
+      ManagerCustomerSupport(name: widget.name), // Tab "CSKH"
+      CommonProfile(name: widget.name, role: 'manager'), // Tab "Cá nhân"
     ];
+
+    // Bạn có thể thêm logic fetch dữ liệu ở đây
+    _fetchDashboardData();
+  }
+
+  /// Phương thức giả định để fetch dữ liệu cho dashboard.
+  /// Trong thực tế, bạn sẽ gọi API hoặc database ở đây.
+  void _fetchDashboardData() async {
+    // Simulate a network delay
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      _revenue = '125,500,000 VND';
+      _totalOrders = '550';
+      _stockQuantity = '1,200 sản phẩm';
+      _damagedItems = '12 sản phẩm';
+      _customerCount = '880 khách hàng';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: _screens[_selectedIndex],
+      backgroundColor: Colors.white, // Màu nền của Scaffold
+      body:
+          _screens[_selectedIndex], // Hiển thị màn hình tương ứng với tab được chọn
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.red,
-        unselectedItemColor: Colors.black,
+        currentIndex: _selectedIndex, // Tab hiện tại được chọn
+        selectedItemColor: Colors.red, // Màu của icon và label khi được chọn
+        unselectedItemColor:
+            Colors.black, // Màu của icon và label khi không được chọn
         onTap: (index) {
           setState(() {
-            _selectedIndex = index; // Cập nhật tab
+            _selectedIndex =
+                index; // Cập nhật index của tab khi người dùng chạm vào
           });
         },
         items: const [
+          // Các item trong BottomNavigationBar
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Đơn hàng'),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'CSKH'),
@@ -51,108 +83,22 @@ class _ManagerHomeState extends State<ManagerHome> {
     );
   }
 
+  /// Xây dựng màn hình dashboard chính.
+  /// Bao gồm Header và danh sách các thẻ thống kê.
   Widget _buildDashboard() {
     return SafeArea(
       child: Column(
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color.fromARGB(255, 222, 96, 85),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      backgroundImage: AssetImage('assets/logo/logo1.png'),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Xin chào,\n${widget.name}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                        ),
-                      ),
-                    ),
-                    const Icon(Icons.notifications, color: Colors.yellow),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Tìm kiếm...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: const Icon(Icons.close),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Header widget
+          Header(name: widget.name),
 
-          const SizedBox(height: 16),
-
-          // Nội dung
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                _buildStatCard('Doanh thu:', Icons.bar_chart, Colors.lightBlue),
-                _buildStatCard(
-                  'Tổng đơn hàng:',
-                  Icons.shopping_cart,
-                  Colors.green,
-                ),
-                _buildStatCard('Hàng tồn kho:', Icons.warehouse, Colors.orange),
-                _buildStatCard(
-                  'Hàng hư hỏng:',
-                  Icons.broken_image,
-                  Colors.pink,
-                ),
-                _buildStatCard(
-                  'Danh sách khách hàng',
-                  Icons.people,
-                  Colors.redAccent,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String text, IconData icon, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 28, color: Colors.black),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 16, color: Colors.black),
-            ),
+          // Dashboard content
+          ManagerDashboardContent(
+            revenue: _revenue,
+            totalOrders: _totalOrders,
+            stockQuantity: _stockQuantity,
+            damagedItems: _damagedItems,
+            customerCount: _customerCount,
           ),
         ],
       ),
