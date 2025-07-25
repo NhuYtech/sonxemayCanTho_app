@@ -11,13 +11,14 @@ class OrderContent extends StatelessWidget {
         children: [
           // Tiêu đề "Chức năng"
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: const Text(
               'Chức năng',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.lightBlue,
+                fontSize: 24,
+                color: Color(0xFF3F51B5),
+                letterSpacing: 0.5,
               ),
             ),
           ),
@@ -25,12 +26,13 @@ class OrderContent extends StatelessWidget {
           // Danh sách chức năng
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
                 _buildFunctionTile(
                   context,
                   icon: Icons.download,
                   text: 'Đơn nhập',
+                  color: Colors.lightBlue.shade50, // Keep tile background color
                   onTap: () {
                     // TODO: Navigator.push to ImportOrder
                     print('Đơn nhập tapped!');
@@ -40,6 +42,7 @@ class OrderContent extends StatelessWidget {
                   context,
                   icon: Icons.upload,
                   text: 'Đơn xuất',
+                  color: Colors.green.shade50, // Keep tile background color
                   onTap: () {
                     // TODO: Navigator.push to ExportOrder
                     print('Đơn xuất tapped!');
@@ -49,6 +52,7 @@ class OrderContent extends StatelessWidget {
                   context,
                   icon: Icons.inventory_2,
                   text: 'Đơn tồn kho',
+                  color: Colors.orange.shade50, // Keep tile background color
                   onTap: () {
                     // TODO: Navigator.push to StockOrder
                     print('Đơn tồn kho tapped!');
@@ -58,11 +62,13 @@ class OrderContent extends StatelessWidget {
                   context,
                   icon: Icons.broken_image_outlined,
                   text: 'Đơn bị hư hỏng',
+                  color: Colors.red.shade50, // Keep tile background color
                   onTap: () {
                     // TODO: Navigator.push to BrokenOrder
                     print('Đơn bị hư hỏng tapped!');
                   },
                 ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -76,37 +82,62 @@ class OrderContent extends StatelessWidget {
     required IconData icon,
     required String text,
     required VoidCallback onTap,
+    Color? color, // Still keep for tile background color
+    // Removed Color? iconColor, // <--- REMOVED THIS PARAMETER
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
+        color: color ?? Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 2),
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 1.5,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: ListTile(
-        leading: Icon(icon, size: 28, color: Colors.blue.shade700),
-        title: Text(
-          text,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Colors.black87,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 16.0,
+              horizontal: 20.0,
+            ),
+            child: Row(
+              children: [
+                // Icon color set to a fixed Colors.black87
+                Icon(
+                  icon,
+                  size: 30,
+                  color: Colors.black87,
+                ), // <--- ICON COLOR CHANGE HERE
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 18,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 22,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
           ),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 20,
-          color: Colors.grey,
-        ),
-        onTap: onTap,
       ),
     );
   }
