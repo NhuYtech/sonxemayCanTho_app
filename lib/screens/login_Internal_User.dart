@@ -3,6 +3,7 @@ import 'package:sonxemaycantho/services/account.dart';
 import 'customer/customer_home.dart';
 import 'staff/staff_home.dart';
 import 'manager/manager_home.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 
 class LoginInternalUser extends StatefulWidget {
   const LoginInternalUser({super.key});
@@ -37,6 +38,28 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
       );
 
       if (userData != null) {
+        // --- BƯỚC MỚI: Đăng nhập vào Firebase Authentication ---
+        // Chúng ta cần một Firebase Auth UID để sử dụng với Firestore Security Rules
+        // và để _currentUserId trong ManagerCustomerSupport không bị null.
+        // signInAnonymously() sẽ cung cấp một UID duy nhất cho phiên làm việc này.
+        // Lưu ý: Đối với ứng dụng thực tế, nếu bạn muốn liên kết tài khoản tùy chỉnh
+        // với Firebase Auth một cách bền vững, bạn nên sử dụng Custom Token Authentication
+        // (yêu cầu backend của bạn tạo token Firebase Auth).
+        UserCredential userCredential = await FirebaseAuth.instance
+            .signInAnonymously();
+        String? firebaseAuthUid = userCredential.user?.uid;
+
+        if (firebaseAuthUid == null) {
+          _showErrorDialog('Lỗi xác thực Firebase. Vui lòng thử lại.');
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        // In ra Firebase Auth UID để bạn có thể kiểm tra và cập nhật Firestore
+        debugPrint(
+          '>>> LoginInternalUser: Đăng nhập tùy chỉnh thành công. Firebase Auth UID: $firebaseAuthUid',
+        );
+
         final role = userData['role'];
         final name = userData['fullName'];
 

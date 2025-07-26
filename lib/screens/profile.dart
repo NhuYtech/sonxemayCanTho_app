@@ -39,11 +39,11 @@ class Profile extends StatelessWidget {
                     ),
                   );
                 }),
-                if (role != 'customer')
-                  _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {
-                    // TODO: Chuyển đến màn hình Phản hồi
-                    print('Ghi chú và phản hồi tapped!');
-                  }),
+                // if (role != 'customer')
+                //   _buildTile(Icons.feedback, 'Ghi chú và phản hồi', () {
+                //     // TODO: Chuyển đến màn hình Phản hồi
+                //     print('Ghi chú và phản hồi tapped!');
+                //   }),
                 if (role == 'manager') // Chỉ hiển thị cho manager
                   _buildTile(Icons.lock, 'Đổi mật khẩu', () {
                     Navigator.push(

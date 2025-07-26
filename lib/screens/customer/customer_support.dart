@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth để lấy User ID
-// XÓA DÒNG NÀY: Vì Header đã được cung cấp bởi AppBar của ManagerHome
-// import 'package:sonxemaycantho/widgets/header.dart'; // Import widget Header
 
 class ManagerCustomerSupport extends StatefulWidget {
   final String name;
@@ -13,25 +11,21 @@ class ManagerCustomerSupport extends StatefulWidget {
 }
 
 class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
-  // Khởi tạo Firestore instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  // Khởi tạo Firebase Auth instance để lấy thông tin người dùng hiện tại
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController =
-      ScrollController(); // Để cuộn xuống tin nhắn mới nhất
+  final ScrollController _scrollController = ScrollController();
 
-  // Biến để lưu trữ ID của cuộc trò chuyện hiện tại
   String? _currentChatId;
-  String? _currentUserId; // ID của người dùng (manager) hiện tại
+  String? _currentUserId;
+  bool _isChatLoading =
+      true; // Thêm biến trạng thái để theo dõi quá trình tải chat
 
   @override
   void initState() {
     super.initState();
-    _getCurrentUser();
-    // Gọi hàm để tìm hoặc tạo chat ID khi màn hình khởi tạo
-    _findOrCreateChat();
+    _initializeChat(); // Gọi hàm khởi tạo chat
   }
 
   @override
@@ -41,52 +35,84 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
     super.dispose();
   }
 
-  // Lấy thông tin người dùng hiện tại
-  void _getCurrentUser() {
+  // Hàm mới để quản lý toàn bộ quá trình khởi tạo chat
+  void _initializeChat() async {
+    debugPrint('>>> _initializeChat: Starting chat initialization.');
+    setState(() {
+      _isChatLoading = true; // Bắt đầu tải, hiển thị loading
+    });
+
+    // Bước 1: Lấy thông tin người dùng hiện tại
     final user = _auth.currentUser;
     if (user != null) {
       setState(() {
         _currentUserId = user.uid;
       });
-      debugPrint('Current user ID: $_currentUserId');
+      debugPrint('>>> _initializeChat: Current user ID: $_currentUserId');
     } else {
-      debugPrint('No user currently signed in.');
+      debugPrint(
+        '>>> _initializeChat: No user currently signed in. _currentUserId is null.',
+      );
       // Xử lý trường hợp không có người dùng đăng nhập (ví dụ: chuyển hướng đến màn hình đăng nhập)
+      setState(() {
+        _isChatLoading = false; // Dừng loading nếu không có người dùng
+      });
+      return;
     }
+
+    // Bước 2: Tìm hoặc tạo chat ID
+    await _findOrCreateChat();
+
+    setState(() {
+      _isChatLoading = false; // Hoàn thành tải, ẩn loading
+    });
+    debugPrint(
+      '>>> _initializeChat: Chat initialization finished. _currentChatId: $_currentChatId',
+    );
   }
 
-  // Hàm để tìm hoặc tạo chat ID
   Future<void> _findOrCreateChat() async {
-    // Đây là logic giả định để xác định chatId.
-    // Trong một ứng dụng thực tế, bạn sẽ cần một cách phức tạp hơn để quản lý các cuộc trò chuyện.
-    // Ví dụ:
-    // 1. Nếu đây là trang CSKH tổng hợp, bạn sẽ hiển thị danh sách các cuộc trò chuyện
-    //    và người quản lý sẽ chọn một cuộc trò chuyện để tham gia.
-    // 2. Hoặc, nếu một khách hàng bắt đầu cuộc trò chuyện, bạn sẽ tạo một chatId duy nhất
-    //    liên kết với khách hàng đó và người quản lý sẽ được thông báo.
+    final String customerIdForThisChat = '6YHcpasDKZQIQFacavCgWnTNZca2';
 
-    // Để đơn giản cho ví dụ này, chúng ta sẽ sử dụng một customerId cố định
-    // Trong thực tế, 'customer_id_for_this_chat' sẽ là ID của khách hàng đang được hỗ trợ
-    final String customerIdForThisChat =
-        '6YHcpasDKZQIQFacavCgWnTNZca2'; // Thay bằng ID khách hàng thực tế (ví dụ từ Firebase Console)
+    debugPrint('>>> _findOrCreateChat: Attempting to find/create chat.');
+    debugPrint(
+      '>>> _findOrCreateChat: _currentUserId (inside findOrCreateChat): $_currentUserId',
+    );
+    debugPrint(
+      '>>> _findOrCreateChat: customerIdForThisChat: $customerIdForThisChat',
+    );
 
     if (_currentUserId == null) {
-      debugPrint('Cannot find or create chat: Current user ID is null.');
+      debugPrint(
+        '>>> _findOrCreateChat: Cannot find or create chat: _currentUserId is null.',
+      );
       return;
     }
 
     try {
-      // Tìm kiếm cuộc trò chuyện giữa manager và khách hàng này
+      debugPrint(
+        '>>> _findOrCreateChat: Querying chats where participants contain $_currentUserId',
+      );
       final querySnapshot = await _firestore
           .collection('chats')
           .where('participants', arrayContains: _currentUserId)
           .get();
 
       String? foundChatId;
+      debugPrint(
+        '>>> _findOrCreateChat: Found ${querySnapshot.docs.length} chats containing current user.',
+      );
+
       for (var doc in querySnapshot.docs) {
         final participants = List<String>.from(doc['participants']);
+        debugPrint(
+          '>>> _findOrCreateChat: Checking chat ${doc.id} with participants: $participants',
+        );
         if (participants.contains(customerIdForThisChat)) {
           foundChatId = doc.id;
+          debugPrint(
+            '>>> _findOrCreateChat: Found matching chat with customer ID: ${doc.id}',
+          );
           break;
         }
       }
@@ -95,36 +121,42 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
         setState(() {
           _currentChatId = foundChatId;
         });
-        debugPrint('Found existing chat with ID: $_currentChatId');
+        debugPrint(
+          '>>> _findOrCreateChat: Successfully set _currentChatId to: $_currentChatId',
+        );
       } else {
-        // Nếu không tìm thấy, tạo một cuộc trò chuyện mới
+        debugPrint(
+          '>>> _findOrCreateChat: No existing chat found with customer. Creating new chat.',
+        );
         final newChatDoc = await _firestore.collection('chats').add({
-          'participants': [
-            _currentUserId!,
-            customerIdForThisChat,
-          ], // Sử dụng _currentUserId! sau khi kiểm tra null
+          'participants': [_currentUserId!, customerIdForThisChat],
           'lastMessage': '',
-          'lastMessageTimestamp':
-              FieldValue.serverTimestamp(), // Thêm trường này
-          'status': 'open', // Trạng thái cuộc trò chuyện
-          'createdAt': FieldValue.serverTimestamp(), // Thêm trường này
+          'lastMessageTimestamp': FieldValue.serverTimestamp(),
+          'status': 'open',
+          'createdAt': FieldValue.serverTimestamp(),
         });
         setState(() {
           _currentChatId = newChatDoc.id;
         });
-        debugPrint('Created new chat with ID: $_currentChatId');
+        debugPrint(
+          '>>> _findOrCreateChat: Created new chat with ID: $_currentChatId',
+        );
       }
     } catch (e) {
-      debugPrint('Error finding or creating chat: $e');
+      debugPrint('>>> _findOrCreateChat: Error finding or creating chat: $e');
     }
   }
 
-  // Gửi tin nhắn lên Firestore
   void _sendMessage() async {
     final text = _controller.text.trim();
+
+    debugPrint('>>> _sendMessage: Text: "$text"');
+    debugPrint('>>> _sendMessage: _currentChatId: $_currentChatId');
+    debugPrint('>>> _sendMessage: _currentUserId: $_currentUserId');
+
     if (text.isEmpty || _currentChatId == null || _currentUserId == null) {
       debugPrint(
-        'Cannot send message: Text is empty, chat ID or user ID is null.',
+        '>>> _sendMessage: Cannot send message: Text is empty, chat ID or user ID is null. Returning.',
       );
       return;
     }
@@ -138,30 +170,28 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
             'senderId': _currentUserId,
             'text': text,
             'timestamp': FieldValue.serverTimestamp(),
-            'read': false, // Mặc định là chưa đọc khi gửi
+            'read': false,
           });
 
-      // Cập nhật lastMessage và timestamp trong document chat chính
       await _firestore.collection('chats').doc(_currentChatId!).update({
         'lastMessage': text,
-        'lastMessageTimestamp':
-            FieldValue.serverTimestamp(), // Cập nhật trường này
+        'lastMessageTimestamp': FieldValue.serverTimestamp(),
       });
 
       _controller.clear();
-      // Cuộn xuống cuối danh sách tin nhắn sau khi gửi
+      debugPrint(
+        '>>> _sendMessage: Message sent successfully. Clearing text field.',
+      );
       _scrollController.animateTo(
-        0.0, // Cuộn về đầu danh sách (do reverse: true)
+        0.0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } catch (e) {
-      debugPrint('Error sending message: $e');
-      // Xử lý lỗi (ví dụ: hiển thị thông báo cho người dùng)
+      debugPrint('>>> _sendMessage: Error sending message: $e');
     }
   }
 
-  // Hàm đánh dấu tin nhắn là đã đọc
   void _markMessageAsRead(String chatId, String messageId) async {
     try {
       await _firestore
@@ -170,45 +200,41 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
           .collection('messages')
           .doc(messageId)
           .update({'read': true});
-      debugPrint('Message $messageId in chat $chatId marked as read.');
+      debugPrint(
+        '>>> _markMessageAsRead: Message $messageId in chat $chatId marked as read.',
+      );
     } catch (e) {
-      debugPrint('Error marking message as read: $e');
+      debugPrint('>>> _markMessageAsRead: Error marking message as read: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // XÓA WIDGET SCAFFOLD NÀY:
-    // Màn hình này sẽ được đặt trong body của Scaffold khác (ManagerHome),
-    // nên không cần Scaffold riêng để tránh trùng lặp AppBar.
     return SafeArea(
       child: Column(
         children: [
-          // XÓA DÒNG NÀY: Header đã có ở ManagerHome
-          // Header(
-          //   name: widget.name,
-          //   backgroundColor: const Color(
-          //     0xFFC1473B,
-          //   ), // Màu đỏ đậm bạn đã chỉ định
-          // ),
-
-          // Nội dung tin nhắn
           Expanded(
-            child: _currentChatId == null
+            child:
+                _isChatLoading // Hiển thị loading nếu chat đang được khởi tạo
                 ? const Center(
                     child: CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
                     ),
-                  ) // Hiển thị loading khi đang tìm/tạo chat
+                  )
+                : _currentChatId ==
+                      null // Nếu không loading mà _currentChatId vẫn null (có lỗi)
+                ? const Center(
+                    child: Text(
+                      'Không thể tải cuộc trò chuyện. Vui lòng thử lại.',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  )
                 : StreamBuilder<QuerySnapshot>(
                     stream: _firestore
                         .collection('chats')
                         .doc(_currentChatId!)
                         .collection('messages')
-                        .orderBy(
-                          'timestamp',
-                          descending: true,
-                        ) // Sắp xếp tin nhắn mới nhất ở trên cùng (do reverse: true)
+                        .orderBy('timestamp', descending: true)
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -242,15 +268,11 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                         final messageText = messageData['text'] as String;
                         final messageSenderId =
                             messageData['senderId'] as String?;
-                        final isRead =
-                            messageData['read'] as bool? ??
-                            false; // Lấy trạng thái đã đọc
+                        final isRead = messageData['read'] as bool? ?? false;
                         final currentUserIsSender =
                             (messageSenderId == _currentUserId);
 
-                        // Đánh dấu tin nhắn là đã đọc nếu nó không phải của người dùng hiện tại và chưa được đọc
                         if (!currentUserIsSender && !isRead) {
-                          // Sử dụng Future.microtask để tránh lỗi "setState during build"
                           Future.microtask(
                             () => _markMessageAsRead(
                               _currentChatId!,
@@ -269,28 +291,21 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                                 vertical: 4.0,
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize
-                                    .min, // Giúp Row không chiếm hết chiều rộng
-                                crossAxisAlignment: CrossAxisAlignment
-                                    .end, // Canh dưới cho avatar và bubble
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  // Avatar cho tin nhắn đến (không phải của người gửi hiện tại)
                                   if (!currentUserIsSender) ...[
                                     const CircleAvatar(
-                                      radius: 16, // Kích thước avatar
-                                      backgroundColor:
-                                          Colors.blueGrey, // Màu nền avatar
+                                      radius: 16,
+                                      backgroundColor: Colors.blueGrey,
                                       child: Icon(
                                         Icons.person,
                                         color: Colors.white,
                                         size: 20,
-                                      ), // Icon người dùng
+                                      ),
                                     ),
-                                    const SizedBox(
-                                      width: 8,
-                                    ), // Khoảng cách giữa avatar và bubble
+                                    const SizedBox(width: 8),
                                   ],
-                                  // Nội dung tin nhắn
                                   Flexible(
                                     child: Container(
                                       padding: const EdgeInsets.all(12),
@@ -299,23 +314,19 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: currentUserIsSender
-                                            ? const Color(
-                                                0xFFB3E5FC,
-                                              ) // Màu xanh nhạt cho tin nhắn gửi đi
-                                            : Colors
-                                                  .white, // Màu trắng cho tin nhắn đến
+                                            ? const Color(0xFFB3E5FC)
+                                            : Colors.white,
                                         borderRadius: BorderRadius.only(
                                           topLeft: const Radius.circular(16),
                                           topRight: const Radius.circular(16),
                                           bottomLeft: Radius.circular(
                                             currentUserIsSender ? 16 : 4,
-                                          ), // Góc dưới trái ít bo hơn cho tin nhắn đến
+                                          ),
                                           bottomRight: Radius.circular(
                                             currentUserIsSender ? 4 : 16,
-                                          ), // Góc dưới phải ít bo hơn cho tin nhắn gửi đi
+                                          ),
                                         ),
                                         boxShadow: [
-                                          // Thêm bóng đổ nhẹ
                                           BoxShadow(
                                             color: Colors.grey.withOpacity(0.2),
                                             spreadRadius: 1,
@@ -335,7 +346,7 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                                               fontSize: 15,
                                             ),
                                           ),
-                                          if (currentUserIsSender) // Chỉ hiển thị trạng thái đã xem cho tin nhắn của mình
+                                          if (currentUserIsSender)
                                             Padding(
                                               padding: const EdgeInsets.only(
                                                 top: 4.0,
@@ -346,7 +357,7 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                                                   Text(
                                                     isRead
                                                         ? 'Đã xem'
-                                                        : 'Đã gửi', // Hiển thị "Đã xem" hoặc "Đã gửi"
+                                                        : 'Đã gửi',
                                                     style: TextStyle(
                                                       fontSize: 11,
                                                       color: Colors.black54,
@@ -356,13 +367,11 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                                                   Icon(
                                                     isRead
                                                         ? Icons.done_all
-                                                        : Icons
-                                                              .done, // Icon 2 tick nếu đã xem, 1 tick nếu đã gửi
+                                                        : Icons.done,
                                                     size: 14,
                                                     color: isRead
                                                         ? Colors.blue
-                                                        : Colors
-                                                              .black54, // Màu xanh nếu đã xem
+                                                        : Colors.black54,
                                                   ),
                                                 ],
                                               ),
@@ -371,7 +380,6 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                                       ),
                                     ),
                                   ),
-                                  // Khoảng cách cho tin nhắn gửi đi
                                   if (currentUserIsSender)
                                     const SizedBox(width: 8),
                                 ],
@@ -381,8 +389,8 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                         );
                       }
                       return ListView(
-                        controller: _scrollController, // Gán ScrollController
-                        reverse: true, // Hiển thị tin nhắn mới nhất ở dưới cùng
+                        controller: _scrollController,
+                        reverse: true,
                         padding: const EdgeInsets.all(12),
                         children: messageBubbles,
                       );
@@ -391,13 +399,10 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
           ),
 
           // Ô nhập tin nhắn
-          // Thay đổi cấu trúc để tách TextField và IconButton
           Padding(
-            padding: const EdgeInsets.all(
-              12.0,
-            ), // Padding cho toàn bộ phần nhập tin nhắn
+            padding: const EdgeInsets.all(12.0),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end, // Canh chỉnh theo đáy
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Expanded(
                   child: Container(
@@ -407,11 +412,8 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        30,
-                      ), // Bo tròn nhiều hơn
+                      borderRadius: BorderRadius.circular(30),
                       boxShadow: [
-                        // Thêm bóng đổ
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.3),
                           spreadRadius: 1,
@@ -424,27 +426,46 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                       controller: _controller,
                       decoration: const InputDecoration(
                         hintText: 'Tin nhắn...',
-                        border: InputBorder.none, // Bỏ border của TextField
+                        border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 4,
                           vertical: 8,
-                        ), // Điều chỉnh padding bên trong TextField
+                        ),
                       ),
-                      onSubmitted: (_) => _sendMessage(),
-                      maxLines: null, // Cho phép nhiều dòng
-                      keyboardType: TextInputType.multiline, // Bàn phím đa dòng
+                      onSubmitted: (text) {
+                        if (!_isChatLoading &&
+                            _currentChatId != null &&
+                            _currentUserId != null) {
+                          _sendMessage();
+                        } else {
+                          debugPrint(
+                            '>>> TextField onSubmitted: Chat not ready to send message.',
+                          );
+                        }
+                      },
+                      maxLines: null,
+                      keyboardType: TextInputType.multiline,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12), // Khoảng cách giữa ô nhập và nút gửi
-                // Nút gửi riêng biệt
+                const SizedBox(width: 12),
                 GestureDetector(
-                  onTap: _sendMessage,
+                  onTap: () {
+                    if (!_isChatLoading &&
+                        _currentChatId != null &&
+                        _currentUserId != null) {
+                      _sendMessage();
+                    } else {
+                      debugPrint(
+                        '>>> Send Button onTap: Chat not ready to send message.',
+                      );
+                    }
+                  },
                   child: Container(
-                    padding: const EdgeInsets.all(12), // Padding cho icon
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red, // Màu đỏ cho nút gửi
-                      shape: BoxShape.circle, // Hình tròn
+                      color: Colors.red,
+                      shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.red.withOpacity(0.4),
@@ -458,7 +479,7 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
                       Icons.send,
                       color: Colors.white,
                       size: 28,
-                    ), // Icon gửi màu trắng
+                    ),
                   ),
                 ),
               ],
