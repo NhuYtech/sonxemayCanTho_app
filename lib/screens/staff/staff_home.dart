@@ -21,7 +21,7 @@ class _StaffHomeState extends State<StaffHome> {
     _screens = [
       _buildDashboard(), // Trang chủ
       const CreateRepairOrderScreen(), // Tạo đơn sửa chữa
-      CommonProfile(name: widget.name, role: 'staff'), // Trang cá nhân
+      Profile(name: widget.name, role: 'staff'), // Trang cá nhân
     ];
   }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth để lấy User ID
-import 'package:sonxemaycantho/widgets/header.dart'; // Import widget Header
+// XÓA DÒNG NÀY: Vì Header đã được cung cấp bởi AppBar của ManagerHome
+// import 'package:sonxemaycantho/widgets/header.dart'; // Import widget Header
 
 class ManagerCustomerSupport extends StatefulWidget {
   final String name;
@@ -177,305 +178,293 @@ class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors
-          .grey
-          .shade200, // Background for the chat area, slightly lighter
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Sử dụng widget Header đã được tùy chỉnh
-            Header(
-              name: widget.name,
-              backgroundColor: const Color(
-                0xFFC1473B,
-              ), // Màu đỏ đậm bạn đã chỉ định
-            ),
+    // XÓA WIDGET SCAFFOLD NÀY:
+    // Màn hình này sẽ được đặt trong body của Scaffold khác (ManagerHome),
+    // nên không cần Scaffold riêng để tránh trùng lặp AppBar.
+    return SafeArea(
+      child: Column(
+        children: [
+          // XÓA DÒNG NÀY: Header đã có ở ManagerHome
+          // Header(
+          //   name: widget.name,
+          //   backgroundColor: const Color(
+          //     0xFFC1473B,
+          //   ), // Màu đỏ đậm bạn đã chỉ định
+          // ),
 
-            // Nội dung tin nhắn
-            Expanded(
-              child: _currentChatId == null
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                      ),
-                    ) // Hiển thị loading khi đang tìm/tạo chat
-                  : StreamBuilder<QuerySnapshot>(
-                      stream: _firestore
-                          .collection('chats')
-                          .doc(_currentChatId!)
-                          .collection('messages')
-                          .orderBy(
-                            'timestamp',
-                            descending: true,
-                          ) // Sắp xếp tin nhắn mới nhất ở trên cùng (do reverse: true)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.red,
-                              ),
+          // Nội dung tin nhắn
+          Expanded(
+            child: _currentChatId == null
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                    ),
+                  ) // Hiển thị loading khi đang tìm/tạo chat
+                : StreamBuilder<QuerySnapshot>(
+                    stream: _firestore
+                        .collection('chats')
+                        .doc(_currentChatId!)
+                        .collection('messages')
+                        .orderBy(
+                          'timestamp',
+                          descending: true,
+                        ) // Sắp xếp tin nhắn mới nhất ở trên cùng (do reverse: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.red,
+                            ),
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        debugPrint('Stream error: ${snapshot.error}');
+                        return Center(
+                          child: Text('Đã xảy ra lỗi: ${snapshot.error}'),
+                        );
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Chưa có tin nhắn nào. Bắt đầu cuộc trò chuyện!',
+                          ),
+                        );
+                      }
+
+                      final messages = snapshot.data!.docs;
+                      List<Widget> messageBubbles = [];
+                      for (var messageDoc in messages) {
+                        final messageData =
+                            messageDoc.data() as Map<String, dynamic>;
+                        final messageText = messageData['text'] as String;
+                        final messageSenderId =
+                            messageData['senderId'] as String?;
+                        final isRead =
+                            messageData['read'] as bool? ??
+                            false; // Lấy trạng thái đã đọc
+                        final currentUserIsSender =
+                            (messageSenderId == _currentUserId);
+
+                        // Đánh dấu tin nhắn là đã đọc nếu nó không phải của người dùng hiện tại và chưa được đọc
+                        if (!currentUserIsSender && !isRead) {
+                          // Sử dụng Future.microtask để tránh lỗi "setState during build"
+                          Future.microtask(
+                            () => _markMessageAsRead(
+                              _currentChatId!,
+                              messageDoc.id,
                             ),
                           );
                         }
-                        if (snapshot.hasError) {
-                          debugPrint('Stream error: ${snapshot.error}');
-                          return Center(
-                            child: Text('Đã xảy ra lỗi: ${snapshot.error}'),
-                          );
-                        }
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'Chưa có tin nhắn nào. Bắt đầu cuộc trò chuyện!',
-                            ),
-                          );
-                        }
 
-                        final messages = snapshot.data!.docs;
-                        List<Widget> messageBubbles = [];
-                        for (var messageDoc in messages) {
-                          final messageData =
-                              messageDoc.data() as Map<String, dynamic>;
-                          final messageText = messageData['text'] as String;
-                          final messageSenderId =
-                              messageData['senderId'] as String?;
-                          final isRead =
-                              messageData['read'] as bool? ??
-                              false; // Lấy trạng thái đã đọc
-                          final currentUserIsSender =
-                              (messageSenderId == _currentUserId);
-
-                          // Đánh dấu tin nhắn là đã đọc nếu nó không phải của người dùng hiện tại và chưa được đọc
-                          if (!currentUserIsSender && !isRead) {
-                            // Sử dụng Future.microtask để tránh lỗi "setState during build"
-                            Future.microtask(
-                              () => _markMessageAsRead(
-                                _currentChatId!,
-                                messageDoc.id,
+                        messageBubbles.add(
+                          Align(
+                            alignment: currentUserIsSender
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 4.0,
                               ),
-                            );
-                          }
-
-                          messageBubbles.add(
-                            Align(
-                              alignment: currentUserIsSender
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4.0,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize
-                                      .min, // Giúp Row không chiếm hết chiều rộng
-                                  crossAxisAlignment: CrossAxisAlignment
-                                      .end, // Canh dưới cho avatar và bubble
-                                  children: [
-                                    // Avatar cho tin nhắn đến (không phải của người gửi hiện tại)
-                                    if (!currentUserIsSender) ...[
-                                      const CircleAvatar(
-                                        radius: 16, // Kích thước avatar
-                                        backgroundColor:
-                                            Colors.blueGrey, // Màu nền avatar
-                                        child: Icon(
-                                          Icons.person,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ), // Icon người dùng
+                              child: Row(
+                                mainAxisSize: MainAxisSize
+                                    .min, // Giúp Row không chiếm hết chiều rộng
+                                crossAxisAlignment: CrossAxisAlignment
+                                    .end, // Canh dưới cho avatar và bubble
+                                children: [
+                                  // Avatar cho tin nhắn đến (không phải của người gửi hiện tại)
+                                  if (!currentUserIsSender) ...[
+                                    const CircleAvatar(
+                                      radius: 16, // Kích thước avatar
+                                      backgroundColor:
+                                          Colors.blueGrey, // Màu nền avatar
+                                      child: Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ), // Icon người dùng
+                                    ),
+                                    const SizedBox(
+                                      width: 8,
+                                    ), // Khoảng cách giữa avatar và bubble
+                                  ],
+                                  // Nội dung tin nhắn
+                                  Flexible(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 280,
                                       ),
-                                      const SizedBox(
-                                        width: 8,
-                                      ), // Khoảng cách giữa avatar và bubble
-                                    ],
-                                    // Nội dung tin nhắn
-                                    Flexible(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(12),
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 280,
+                                      decoration: BoxDecoration(
+                                        color: currentUserIsSender
+                                            ? const Color(
+                                                0xFFB3E5FC,
+                                              ) // Màu xanh nhạt cho tin nhắn gửi đi
+                                            : Colors
+                                                  .white, // Màu trắng cho tin nhắn đến
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(16),
+                                          topRight: const Radius.circular(16),
+                                          bottomLeft: Radius.circular(
+                                            currentUserIsSender ? 16 : 4,
+                                          ), // Góc dưới trái ít bo hơn cho tin nhắn đến
+                                          bottomRight: Radius.circular(
+                                            currentUserIsSender ? 4 : 16,
+                                          ), // Góc dưới phải ít bo hơn cho tin nhắn gửi đi
                                         ),
-                                        decoration: BoxDecoration(
-                                          color: currentUserIsSender
-                                              ? const Color(
-                                                  0xFFB3E5FC,
-                                                ) // Màu xanh nhạt cho tin nhắn gửi đi
-                                              : Colors
-                                                    .white, // Màu trắng cho tin nhắn đến
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: const Radius.circular(16),
-                                            topRight: const Radius.circular(16),
-                                            bottomLeft: Radius.circular(
-                                              currentUserIsSender ? 16 : 4,
-                                            ), // Góc dưới trái ít bo hơn cho tin nhắn đến
-                                            bottomRight: Radius.circular(
-                                              currentUserIsSender ? 4 : 16,
-                                            ), // Góc dưới phải ít bo hơn cho tin nhắn gửi đi
+                                        boxShadow: [
+                                          // Thêm bóng đổ nhẹ
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.2),
+                                            spreadRadius: 1,
+                                            blurRadius: 3,
+                                            offset: const Offset(0, 2),
                                           ),
-                                          boxShadow: [
-                                            // Thêm bóng đổ nhẹ
-                                            BoxShadow(
-                                              color: Colors.grey.withOpacity(
-                                                0.2,
-                                              ),
-                                              spreadRadius: 1,
-                                              blurRadius: 3,
-                                              offset: const Offset(0, 2),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: currentUserIsSender
+                                            ? CrossAxisAlignment.end
+                                            : CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            messageText,
+                                            style: const TextStyle(
+                                              fontSize: 15,
                                             ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              currentUserIsSender
-                                              ? CrossAxisAlignment.end
-                                              : CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              messageText,
-                                              style: const TextStyle(
-                                                fontSize: 15,
+                                          ),
+                                          if (currentUserIsSender) // Chỉ hiển thị trạng thái đã xem cho tin nhắn của mình
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 4.0,
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    isRead
+                                                        ? 'Đã xem'
+                                                        : 'Đã gửi', // Hiển thị "Đã xem" hoặc "Đã gửi"
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.black54,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Icon(
+                                                    isRead
+                                                        ? Icons.done_all
+                                                        : Icons
+                                                              .done, // Icon 2 tick nếu đã xem, 1 tick nếu đã gửi
+                                                    size: 14,
+                                                    color: isRead
+                                                        ? Colors.blue
+                                                        : Colors
+                                                              .black54, // Màu xanh nếu đã xem
+                                                  ),
+                                                ],
                                               ),
                                             ),
-                                            if (currentUserIsSender) // Chỉ hiển thị trạng thái đã xem cho tin nhắn của mình
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  top: 4.0,
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      isRead
-                                                          ? 'Đã xem'
-                                                          : 'Đã gửi', // Hiển thị "Đã xem" hoặc "Đã gửi"
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Colors.black54,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Icon(
-                                                      isRead
-                                                          ? Icons.done_all
-                                                          : Icons
-                                                                .done, // Icon 2 tick nếu đã xem, 1 tick nếu đã gửi
-                                                      size: 14,
-                                                      color: isRead
-                                                          ? Colors.blue
-                                                          : Colors
-                                                                .black54, // Màu xanh nếu đã xem
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                          ],
-                                        ),
+                                        ],
                                       ),
                                     ),
-                                    // Khoảng cách cho tin nhắn gửi đi
-                                    if (currentUserIsSender)
-                                      const SizedBox(width: 8),
-                                  ],
-                                ),
+                                  ),
+                                  // Khoảng cách cho tin nhắn gửi đi
+                                  if (currentUserIsSender)
+                                    const SizedBox(width: 8),
+                                ],
                               ),
                             ),
-                          );
-                        }
-                        return ListView(
-                          controller: _scrollController, // Gán ScrollController
-                          reverse:
-                              true, // Hiển thị tin nhắn mới nhất ở dưới cùng
-                          padding: const EdgeInsets.all(12),
-                          children: messageBubbles,
+                          ),
                         );
-                      },
-                    ),
-            ),
+                      }
+                      return ListView(
+                        controller: _scrollController, // Gán ScrollController
+                        reverse: true, // Hiển thị tin nhắn mới nhất ở dưới cùng
+                        padding: const EdgeInsets.all(12),
+                        children: messageBubbles,
+                      );
+                    },
+                  ),
+          ),
 
-            // Ô nhập tin nhắn
-            // Thay đổi cấu trúc để tách TextField và IconButton
-            Padding(
-              padding: const EdgeInsets.all(
-                12.0,
-              ), // Padding cho toàn bộ phần nhập tin nhắn
-              child: Row(
-                crossAxisAlignment:
-                    CrossAxisAlignment.end, // Canh chỉnh theo đáy
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(
-                          30,
-                        ), // Bo tròn nhiều hơn
-                        boxShadow: [
-                          // Thêm bóng đổ
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _controller,
-                        decoration: const InputDecoration(
-                          hintText: 'Tin nhắn...',
-                          border: InputBorder.none, // Bỏ border của TextField
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 8,
-                          ), // Điều chỉnh padding bên trong TextField
+          // Ô nhập tin nhắn
+          // Thay đổi cấu trúc để tách TextField và IconButton
+          Padding(
+            padding: const EdgeInsets.all(
+              12.0,
+            ), // Padding cho toàn bộ phần nhập tin nhắn
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end, // Canh chỉnh theo đáy
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(
+                        30,
+                      ), // Bo tròn nhiều hơn
+                      boxShadow: [
+                        // Thêm bóng đổ
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
                         ),
-                        onSubmitted: (_) => _sendMessage(),
-                        maxLines: null, // Cho phép nhiều dòng
-                        keyboardType:
-                            TextInputType.multiline, // Bàn phím đa dòng
+                      ],
+                    ),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Tin nhắn...',
+                        border: InputBorder.none, // Bỏ border của TextField
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 8,
+                        ), // Điều chỉnh padding bên trong TextField
                       ),
+                      onSubmitted: (_) => _sendMessage(),
+                      maxLines: null, // Cho phép nhiều dòng
+                      keyboardType: TextInputType.multiline, // Bàn phím đa dòng
                     ),
                   ),
-                  const SizedBox(
-                    width: 12,
-                  ), // Khoảng cách giữa ô nhập và nút gửi
-                  // Nút gửi riêng biệt
-                  GestureDetector(
-                    onTap: _sendMessage,
-                    child: Container(
-                      padding: const EdgeInsets.all(12), // Padding cho icon
-                      decoration: BoxDecoration(
-                        color: Colors.red, // Màu đỏ cho nút gửi
-                        shape: BoxShape.circle, // Hình tròn
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withOpacity(0.4),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.send,
-                        color: Colors.white,
-                        size: 28,
-                      ), // Icon gửi màu trắng
+                ),
+                const SizedBox(width: 12), // Khoảng cách giữa ô nhập và nút gửi
+                // Nút gửi riêng biệt
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: Container(
+                    padding: const EdgeInsets.all(12), // Padding cho icon
+                    decoration: BoxDecoration(
+                      color: Colors.red, // Màu đỏ cho nút gửi
+                      shape: BoxShape.circle, // Hình tròn
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.4),
+                          spreadRadius: 1,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
+                    child: const Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 28,
+                    ), // Icon gửi màu trắng
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

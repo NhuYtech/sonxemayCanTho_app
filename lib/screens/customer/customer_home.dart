@@ -1,7 +1,7 @@
 // customer_home.dart
 import 'package:flutter/material.dart';
 import '../../widgets/header.dart';
-import '../profile.dart'; // Import CommonProfile
+import '../profile.dart'; // Import Profile
 
 class CustomerHome extends StatefulWidget {
   final String name;
@@ -31,7 +31,7 @@ class _CustomerHomeState extends State<CustomerHome> {
       _buildHomeTab(), // Tab "Trang chủ"
       const Center(child: Text('📦 Danh sách đơn hàng')), // Tab "Đơn hàng"
       const Center(child: Text('💬 Tin nhắn')), // Tab "Tin nhắn"
-      CommonProfile(name: widget.name, role: 'customer'), // Tab "Tài khoản"
+      Profile(name: widget.name, role: 'customer'), // Tab "Tài khoản"
     ];
 
     // Bạn có thể thêm logic fetch dữ liệu cho dashboard khách hàng ở đây

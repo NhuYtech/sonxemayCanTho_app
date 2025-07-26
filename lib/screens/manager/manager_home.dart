@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../profile.dart';
-import '../customer/order.dart';
-import '../customer/customer_support.dart';
-import '../../widgets/header.dart';
-import 'dashboard.dart';
+import '../profile.dart'; // CommonProfile
+import '../customer/order.dart'; // ManagerOrder (giả định)
+import '../customer/customer_support.dart'; // ManagerCustomerSupport (giả định)
+import '../../widgets/header.dart'; // Header
+import 'dashboard.dart'; // ManagerDashboardContent
 
 class ManagerHome extends StatefulWidget {
   final String name;
@@ -14,37 +14,41 @@ class ManagerHome extends StatefulWidget {
 }
 
 class _ManagerHomeState extends State<ManagerHome> {
-  int _selectedIndex = 0; // Index của tab được chọn trong BottomNavigationBar
+  int _selectedIndex = 0;
 
-  late List<Widget> _screens; // Danh sách các màn hình tương ứng với mỗi tab
+  late List<Widget> _screens;
 
-  // Dữ liệu giả định cho các thẻ thống kê.
-  // Trong ứng dụng thực tế, bạn sẽ fetch dữ liệu này từ API hoặc database.
   String _revenue = '120,000,000 VND';
   String _totalOrders = '530';
   String _stockQuantity = '1,250 sản phẩm';
   String _damagedItems = '15 sản phẩm';
   String _customerCount = '870 khách hàng';
+  String _staffCount = '20 nhân viên';
 
   @override
   void initState() {
     super.initState();
-    // Khởi tạo danh sách các màn hình khi widget được tạo
     _screens = [
-      _buildDashboard(), // Tab "Trang chủ"
-      ManagerOrder(name: widget.name), // Tab "Đơn hàng"
-      ManagerCustomerSupport(name: widget.name), // Tab "CSKH"
-      CommonProfile(name: widget.name, role: 'manager'), // Tab "Cá nhân"
+      // Bây giờ dashboard chỉ cần nội dung, không cần Header riêng
+      ManagerDashboardContent(
+        revenue: _revenue,
+        totalOrders: _totalOrders,
+        stockQuantity: _stockQuantity,
+        damagedItems: _damagedItems,
+        customerCount: _customerCount,
+        staffCount: _staffCount,
+      ),
+      ManagerOrder(name: widget.name),
+      ManagerCustomerSupport(name: widget.name),
+      // CommonProfile giờ cũng sẽ không cần Header riêng nếu bạn muốn nó dùng AppBar chung
+      // Hoặc Profile sẽ có AppBar riêng của nó nếu bạn muốn thiết kế khác
+      Profile(name: widget.name, role: 'manager'),
     ];
 
-    // Bạn có thể thêm logic fetch dữ liệu ở đây
     _fetchDashboardData();
   }
 
-  /// Phương thức giả định để fetch dữ liệu cho dashboard.
-  /// Trong thực tế, bạn sẽ gọi API hoặc database ở đây.
   void _fetchDashboardData() async {
-    // Simulate a network delay
     await Future.delayed(const Duration(seconds: 1));
     setState(() {
       _revenue = '125,500,000 VND';
@@ -58,48 +62,26 @@ class _ManagerHomeState extends State<ManagerHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Màu nền của Scaffold
-      body:
-          _screens[_selectedIndex], // Hiển thị màn hình tương ứng với tab được chọn
+      backgroundColor: Colors.white,
+      // ĐẶT HEADER LÀM APPBAR CHO SCAFFOLD CHÍNH
+      appBar: Header(name: widget.name), // Đây là nơi Header sẽ tràn viền
+      // body chỉ chứa các màn hình đã được định nghĩa ở trên
+      // Mỗi màn hình con KHÔNG nên có AppBar/Header riêng nếu bạn muốn Header chung này.
+      body: _screens[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex, // Tab hiện tại được chọn
-        selectedItemColor: Colors.red, // Màu của icon và label khi được chọn
-        unselectedItemColor:
-            Colors.black, // Màu của icon và label khi không được chọn
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.red,
+        unselectedItemColor: Colors.black,
         onTap: (index) {
           setState(() {
-            _selectedIndex =
-                index; // Cập nhật index của tab khi người dùng chạm vào
+            _selectedIndex = index;
           });
         },
         items: const [
-          // Các item trong BottomNavigationBar
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Đơn hàng'),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'CSKH'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
-        ],
-      ),
-    );
-  }
-
-  /// Xây dựng màn hình dashboard chính.
-  /// Bao gồm Header và danh sách các thẻ thống kê.
-  Widget _buildDashboard() {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Header widget
-          Header(name: widget.name),
-
-          // Dashboard content
-          ManagerDashboardContent(
-            revenue: _revenue,
-            totalOrders: _totalOrders,
-            stockQuantity: _stockQuantity,
-            damagedItems: _damagedItems,
-            customerCount: _customerCount,
-          ),
         ],
       ),
     );

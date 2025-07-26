@@ -6,6 +6,7 @@ class ManagerDashboardContent extends StatelessWidget {
   final String stockQuantity;
   final String damagedItems;
   final String customerCount;
+  final String staffCount;
 
   const ManagerDashboardContent({
     super.key,
@@ -14,6 +15,7 @@ class ManagerDashboardContent extends StatelessWidget {
     required this.stockQuantity,
     required this.damagedItems,
     required this.customerCount,
+    required this.staffCount,
   });
 
   @override
@@ -51,6 +53,12 @@ class ManagerDashboardContent extends StatelessWidget {
             customerCount,
             Icons.people,
             const Color(0xFFF3E5F5),
+          ),
+          _buildStatCard(
+            'Danh sách nhân viên:',
+            staffCount,
+            Icons.groups,
+            const Color.fromARGB(255, 236, 220, 211),
           ),
         ],
       ),

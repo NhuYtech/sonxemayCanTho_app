@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../widgets/header.dart';
-// import '../../widgets/search_field.dart';
+// XÓA DÒNG NÀY: Vì Header đã được cung cấp bởi AppBar của ManagerHome
+// import '../../widgets/header.dart';
+// import '../../widgets/search_field.dart'; // Giữ lại nếu bạn định dùng SearchField sau này
 import 'order_content.dart';
 
 class ManagerOrder extends StatelessWidget {
@@ -12,19 +13,20 @@ class ManagerOrder extends StatelessWidget {
     return SafeArea(
       child: Column(
         children: [
-          // Header
-          Header(name: name),
+          // XÓA DÒNG NÀY: Header đã có ở ManagerHome
+          // Header(name: name),
 
-          // Search Field
+          // Bạn có thể bỏ comment và sử dụng SearchField ở đây nếu cần,
+          // vì nó là một phần của nội dung, không phải thanh tiêu đề chính.
           // SearchField(
           //   hintText: 'Tìm kiếm đơn hàng...',
           //   onSearch: (query) {
-          //     // TODO: Implement search functionality
-          //     print('Searching for: $query');
+          //     // TODO: Triển khai chức năng tìm kiếm
+          //     print('Đang tìm kiếm: $query');
           //   },
           // ),
 
-          // Main Content
+          // Nội dung chính của màn hình Đơn hàng
           const OrderContent(),
         ],
       ),

@@ -100,12 +100,45 @@ class AuthService {
   /// 🚪 Đăng xuất
   Future<void> signOut() async {
     try {
-      await _googleSignIn
-          .signOut(); // Đăng xuất khỏi Google nếu đã đăng nhập bằng Google
-      await _auth.signOut(); // Đăng xuất khỏi Firebase
+      await _googleSignIn.signOut();
+      await _auth.signOut();
     } catch (e) {
       print('Error signing out: $e');
-      // rethrow;
+      rethrow;
+    }
+  }
+
+  /// Đổi mật khẩu cho user hiện tại (chỉ dành cho manager)
+  Future<void> updateUserPassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('Không tìm thấy người dùng đăng nhập');
+
+      // Lấy thông tin user từ Firestore để kiểm tra role
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists)
+        throw Exception('Không tìm thấy thông tin người dùng');
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      if (userData['role'] != 'manager') {
+        throw Exception('Chỉ quản trị viên mới có quyền đổi mật khẩu');
+      }
+
+      // Xác thực lại với mật khẩu hiện tại
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Đổi mật khẩu
+      await user.updatePassword(newPassword);
+    } catch (e) {
+      print('Error updating password: $e');
+      rethrow;
     }
   }
 
