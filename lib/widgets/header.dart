@@ -106,5 +106,5 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(160.0); // Điều chỉnh chiều cao phù hợp với nội dung của bạn
+  Size get preferredSize => const Size.fromHeight(160.0);
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sonxemaycantho/screens/order_entry.dart';
 
 class OrderContent extends StatelessWidget {
   const OrderContent({super.key});
@@ -25,6 +26,7 @@ class OrderContent extends StatelessWidget {
 
           // Danh sách chức năng
           Expanded(
+            // Added Expanded to ListView to make it take available space
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
@@ -34,7 +36,13 @@ class OrderContent extends StatelessWidget {
                   text: 'Đơn nhập',
                   color: Colors.lightBlue.shade50, // Keep tile background color
                   onTap: () {
-                    // TODO: Navigator.push to ImportOrder
+                    // Navigate to OrderEntry when 'Đơn nhập' is tapped
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const OrderEntry(),
+                      ),
+                    );
                     print('Đơn nhập tapped!');
                   },
                 ),

@@ -1,9 +1,11 @@
+// lib/screens/dashboard.dart
 import 'package:flutter/material.dart';
 
+// ManagerDashboardContent remains a StatelessWidget, receiving data
 class ManagerDashboardContent extends StatelessWidget {
   final String revenue;
   final String totalOrders;
-  final String stockQuantity;
+  final String stockQuantity; // This will now receive the count from Firestore
   final String damagedItems;
   final String customerCount;
   final String staffCount;
@@ -20,48 +22,47 @@ class ManagerDashboardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        children: [
-          _buildStatCard(
-            'Doanh thu:',
-            revenue,
-            Icons.bar_chart,
-            const Color(0xFFE3F2FD),
-          ),
-          _buildStatCard(
-            'Tổng đơn hàng:',
-            totalOrders,
-            Icons.shopping_cart,
-            const Color(0xFFE8F5E9),
-          ),
-          _buildStatCard(
-            'Hàng tồn kho:',
-            stockQuantity,
-            Icons.warehouse,
-            const Color(0xFFFFFDE7),
-          ),
-          _buildStatCard(
-            'Hàng hư hỏng:',
-            damagedItems,
-            Icons.broken_image,
-            const Color(0xFFFFEBEE),
-          ),
-          _buildStatCard(
-            'Tổng khách hàng:',
-            customerCount,
-            Icons.people,
-            const Color(0xFFF3E5F5),
-          ),
-          _buildStatCard(
-            'Danh sách nhân viên:',
-            staffCount,
-            Icons.groups,
-            const Color.fromARGB(255, 236, 220, 211),
-          ),
-        ],
-      ),
+    return ListView(
+      // Removed Expanded as it will be in the parent's Column
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      children: [
+        _buildStatCard(
+          'Doanh thu:',
+          revenue,
+          Icons.bar_chart,
+          const Color(0xFFE3F2FD),
+        ),
+        _buildStatCard(
+          'Tổng đơn hàng:',
+          totalOrders,
+          Icons.shopping_cart,
+          const Color(0xFFE8F5E9),
+        ),
+        _buildStatCard(
+          'Tổng đơn nhập:',
+          stockQuantity, // Displaying the fetched count here
+          Icons.warehouse,
+          const Color(0xFFFFFDE7),
+        ),
+        _buildStatCard(
+          'Hàng hư hỏng:',
+          damagedItems,
+          Icons.broken_image,
+          const Color(0xFFFFEBEE),
+        ),
+        _buildStatCard(
+          'Tổng khách hàng:',
+          customerCount,
+          Icons.people,
+          const Color(0xFFF3E5F5),
+        ),
+        _buildStatCard(
+          'Danh sách nhân viên:',
+          staffCount,
+          Icons.groups,
+          const Color.fromARGB(255, 236, 220, 211),
+        ),
+      ],
     );
   }
 
