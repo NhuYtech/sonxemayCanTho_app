@@ -3,15 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth để lấy User ID
 
-class ManagerCustomerSupport extends StatefulWidget {
+class CustomerSupport extends StatefulWidget {
   final String name;
-  const ManagerCustomerSupport({super.key, required this.name});
+  const CustomerSupport({
+    super.key,
+    required this.name,
+    required String chatId,
+    required String customerId,
+  });
 
   @override
-  State<ManagerCustomerSupport> createState() => _ManagerCustomerSupportState();
+  State<CustomerSupport> createState() => _CustomerSupportState();
 }
 
-class _ManagerCustomerSupportState extends State<ManagerCustomerSupport> {
+class _CustomerSupportState extends State<CustomerSupport> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:sonxemaycantho/screens/chat.dart';
+import 'package:sonxemaycantho/widgets/navigation_bar.dart';
 import '../profile.dart'; // CommonProfile
 import '../order.dart'; // ManagerOrder (giả định)
-import '../customer/customer_support.dart'; // ManagerCustomerSupport (giả định)
+import 'customer_support/chat_list.dart'; // Đã thay đổi import này để trỏ đến ChatListScreen
 import '../../widgets/header.dart'; // Header
+import '../../widgets/navigation_bar.dart'; // Import BottomNavBar mới
 import 'dashboard.dart'; // ManagerDashboardContent
 import '../../services/firestore.dart'; // Import FirestoreService với đúng tên file
 
@@ -20,12 +24,12 @@ class _ManagerHomeState extends State<ManagerHome> {
   late List<Widget> _screens;
 
   // Dashboard data variables
-  String _revenue = '120,000,000 VND';
-  String _totalOrders = '530';
+  String _revenue = 'Đang tải...'; // Changed to loading state
+  String _totalOrders = 'Đang tải...'; // Changed to loading state
   String _stockQuantity = 'Đang tải...'; // Changed default value
-  String _damagedItems = '15 sản phẩm';
-  String _customerCount = '870 khách hàng';
-  String _staffCount = '20 nhân viên';
+  String _damagedItems = 'Đang tải...'; // Changed to loading state
+  String _customerCount = 'Đang tải...'; // Changed to loading state
+  String _staffCount = 'Đang tải...'; // Changed to loading state
 
   // Loading state
   bool _isLoading = true;
@@ -52,7 +56,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         isLoading: _isLoading,
       ),
       ManagerOrder(name: widget.name),
-      ManagerCustomerSupport(name: widget.name),
+      ChatList(managerName: widget.name),
       Profile(name: widget.name, role: 'manager'),
     ];
   }
@@ -81,6 +85,11 @@ class _ManagerHomeState extends State<ManagerHome> {
       print('💥 Error fetching dashboard data: $e');
       setState(() {
         _stockQuantity = 'Lỗi tải dữ liệu: $e';
+        _revenue = 'Lỗi tải dữ liệu: $e';
+        _totalOrders = 'Lỗi tải dữ liệu: $e';
+        _damagedItems = 'Lỗi tải dữ liệu: $e';
+        _customerCount = 'Lỗi tải dữ liệu: $e';
+        _staffCount = 'Lỗi tải dữ liệu: $e';
         _isLoading = false;
         _initializeScreens();
       });
@@ -91,9 +100,8 @@ class _ManagerHomeState extends State<ManagerHome> {
     try {
       print('🔍 Bắt đầu fetch dữ liệu đơn nhập...');
 
-      // Thử các collection name có thể - thêm serviceOrders vào đầu danh sách
       List<String> possibleCollections = [
-        'serviceOrders', // Thêm collection này từ Firebase Console
+        'serviceOrders',
         'orders',
         'import_orders',
         'importOrders',
@@ -121,7 +129,6 @@ class _ManagerHomeState extends State<ManagerHome> {
           );
 
           if (querySnapshot.docs.isNotEmpty) {
-            // Debug: in ra thông tin document đầu tiên
             var firstDoc = querySnapshot.docs.first;
             print('📄 Document đầu tiên: ${firstDoc.id}');
 
@@ -130,7 +137,6 @@ class _ManagerHomeState extends State<ManagerHome> {
               print('🔑 Các fields: ${data.keys.toList()}');
               print('💾 Sample data: $data');
 
-              // Với serviceOrders, coi tất cả documents là đơn nhập
               if (collectionName == 'serviceOrders') {
                 totalImportOrders = querySnapshot.docs.length;
                 foundCollection = collectionName;
@@ -141,20 +147,15 @@ class _ManagerHomeState extends State<ManagerHome> {
                 break;
               }
 
-              // Kiểm tra xem có phải đơn nhập không cho các collection khác
               bool isImportOrder = false;
 
-              // Nếu collection tên chứa import/nhap thì coi như đơn nhập
               if (collectionName.toLowerCase().contains('import') ||
                   collectionName.toLowerCase().contains('nhap')) {
                 isImportOrder = true;
                 totalImportOrders = querySnapshot.docs.length;
-              }
-              // Hoặc kiểm tra field type
-              else if (data.containsKey('type')) {
+              } else if (data.containsKey('type')) {
                 if (data['type'].toString().toLowerCase().contains('import') ||
                     data['type'].toString().toLowerCase().contains('nhap')) {
-                  // Đếm số đơn có type = import
                   var importDocs = querySnapshot.docs.where((doc) {
                     var docData = doc.data() as Map<String, dynamic>;
                     return docData['type'].toString().toLowerCase().contains(
@@ -207,18 +208,90 @@ class _ManagerHomeState extends State<ManagerHome> {
     try {
       print('📊 Đang fetch dữ liệu khác...');
 
-      // Fetch total orders using FirestoreService
+      // Fetch total export orders from 'exportOrders' collection
       try {
-        QuerySnapshot ordersSnapshot = await FirebaseFirestore.instance
-            .collection('orders')
+        QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
+            .collection('exportOrders')
             .get();
-        print('✅ Tìm thấy ${ordersSnapshot.docs.length} đơn hàng');
+        print('✅ Tìm thấy ${exportOrdersSnapshot.docs.length} đơn xuất');
 
         setState(() {
-          _totalOrders = '${ordersSnapshot.docs.length}';
+          _totalOrders = '${exportOrdersSnapshot.docs.length} đơn xuất';
         });
       } catch (e) {
-        print('❌ Lỗi khi lấy orders: $e');
+        print('❌ Lỗi khi lấy export orders: $e');
+        setState(() {
+          _totalOrders = 'Lỗi tải';
+        });
+      }
+
+      // Fetch revenue from 'exportOrders'
+      try {
+        QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
+            .collection('exportOrders')
+            .get();
+        double totalRevenue = 0;
+        for (var doc in exportOrdersSnapshot.docs) {
+          var data = doc.data() as Map<String, dynamic>;
+          // Giả định mỗi đơn xuất có 'quantity' và 'pricePerItem'
+          // Hoặc bạn có thể có một trường 'totalAmount' trực tiếp trong exportOrders
+          int quantity = (data['quantity'] as num?)?.toInt() ?? 0;
+          // Để tính doanh thu thực tế, bạn cần giá của sản phẩm.
+          // Ví dụ: lấy giá từ serviceOrder hoặc có một trường giá trực tiếp.
+          // Hiện tại, giả định một giá cố định cho mỗi đơn vị nếu không có trường giá.
+          // Hoặc nếu có trường 'totalAmount' trong exportOrders, hãy dùng nó.
+          double itemPrice =
+              100000; // GIÁ TRỊ GIẢ ĐỊNH: Cần thay bằng giá thực tế từ Firebase
+
+          // Nếu có trường 'totalAmount' trong exportOrders, hãy sử dụng nó
+          // Ví dụ: double orderTotal = (data['totalAmount'] as num?)?.toDouble() ?? 0;
+          // totalRevenue += orderTotal;
+
+          totalRevenue += (quantity * itemPrice); // Tính toán dựa trên giả định
+        }
+
+        setState(() {
+          // Định dạng số tiền
+          final formatter = NumberFormat(
+            '#,##0',
+            'vi_VN',
+          ); // Định dạng tiền Việt Nam
+          _revenue = '${formatter.format(totalRevenue)} VND';
+          print('🎯 Cập nhật UI: Doanh thu: $_revenue');
+        });
+      } catch (e) {
+        print('❌ Lỗi khi tính doanh thu từ export orders: $e');
+        setState(() {
+          _revenue = 'Lỗi tải';
+        });
+      }
+
+      // Fetch damaged items count
+      try {
+        QuerySnapshot damagedItemsSnapshot = await FirebaseFirestore.instance
+            .collection('damagedItems') // Thử collection 'damagedItems'
+            .get();
+        int count = damagedItemsSnapshot.docs.length;
+        if (count == 0) {
+          // Fallback: Check 'products' or 'inventory' collection for 'damaged' status
+          QuerySnapshot productsSnapshot = await FirebaseFirestore.instance
+              .collection('products') // Hoặc 'inventory'
+              .where(
+                'status',
+                isEqualTo: 'damaged',
+              ) // Giả định có trường 'status'
+              .get();
+          count = productsSnapshot.docs.length;
+        }
+        setState(() {
+          _damagedItems = '$count sản phẩm';
+          print('🎯 Cập nhật UI: Hàng hư hỏng: $_damagedItems');
+        });
+      } catch (e) {
+        print('❌ Lỗi khi lấy hàng hư hỏng: $e');
+        setState(() {
+          _damagedItems = 'Lỗi tải';
+        });
       }
 
       // Fetch customer count
@@ -233,7 +306,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       } catch (e) {
         print('❌ Lỗi khi lấy customers: $e');
-        // Thử với collection users
+        // Try with 'users' collection as fallback
         try {
           QuerySnapshot usersSnapshot = await FirebaseFirestore.instance
               .collection('users')
@@ -243,23 +316,36 @@ class _ManagerHomeState extends State<ManagerHome> {
           });
         } catch (e2) {
           print('❌ Lỗi khi lấy users: $e2');
+          setState(() {
+            _customerCount = 'Lỗi tải';
+          });
         }
       }
 
-      // Simulate other data (replace with actual Firestore calls when you have the collections)
-      setState(() {
-        _revenue =
-            '125,500,000 VND'; // This should come from order calculations
-        _damagedItems =
-            '12 sản phẩm'; // This might need specific query for damaged products
-        _staffCount =
-            '20 nhân viên'; // This might come from users collection with role filter
-      });
+      // Fetch staff count
+      try {
+        QuerySnapshot staffSnapshot = await FirebaseFirestore.instance
+            .collection(
+              'users',
+            ) // Giả định nhân viên nằm trong collection 'users'
+            .where('role', isEqualTo: 'staff') // Lọc theo vai trò 'staff'
+            .get();
+        // Bạn có thể thêm các vai trò khác nếu có, ví dụ: .where(FieldPath.documentId, whereIn: ['staff', 'manager'])
+        setState(() {
+          _staffCount = '${staffSnapshot.docs.length} nhân viên';
+          print('🎯 Cập nhật UI: Danh sách nhân viên: $_staffCount');
+        });
+      } catch (e) {
+        print('❌ Lỗi khi lấy danh sách nhân viên: $e');
+        setState(() {
+          _staffCount = 'Lỗi tải';
+        });
+      }
 
       print('✅ Hoàn thành fetch dữ liệu khác');
     } catch (e) {
       print('💥 Error fetching other data: $e');
-      // Keep default values
+      // Keep default values or set to error
     }
   }
 
@@ -267,6 +353,12 @@ class _ManagerHomeState extends State<ManagerHome> {
   void _refreshData() {
     setState(() {
       _isLoading = true;
+      _revenue = 'Đang tải...';
+      _totalOrders = 'Đang tải...';
+      _stockQuantity = 'Đang tải...';
+      _damagedItems = 'Đang tải...';
+      _customerCount = 'Đang tải...';
+      _staffCount = 'Đang tải...';
       _initializeScreens();
     });
     _fetchDashboardData();
@@ -283,21 +375,14 @@ class _ManagerHomeState extends State<ManagerHome> {
         },
         child: _screens[_selectedIndex],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.red,
-        unselectedItemColor: Colors.black,
-        onTap: (index) {
+      bottomNavigationBar: BottomNavBar(
+        // Sử dụng BottomNavBar mới
+        selectedIndex: _selectedIndex,
+        onItemTapped: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Đơn hàng'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'CSKH'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
-        ],
       ),
     );
   }

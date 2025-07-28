@@ -52,7 +52,7 @@ class ManagerDashboardContent extends StatelessWidget {
         //   const Color(0xFFFFEBEE),
         // ),
         _buildStatCard(
-          'Tổng khách hàng:',
+          'Tổng số cửa hàng:',
           customerCount,
           Icons.people,
           const Color(0xFFF3E5F5),

@@ -1,6 +1,6 @@
-// customer_home.dart
+// lib/screens/customer/customer_home.dart
 import 'package:flutter/material.dart';
-import '../../widgets/header.dart';
+import '../../widgets/header.dart'; // Đảm bảo đường dẫn này là chính xác
 import '../profile.dart'; // Import Profile
 
 class CustomerHome extends StatefulWidget {
@@ -54,6 +54,7 @@ class _CustomerHomeState extends State<CustomerHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white, // Màu nền của Scaffold
+      appBar: Header(name: widget.name), // Đặt Header vào đây làm AppBar
       body:
           _pages[_selectedIndex], // Hiển thị màn hình tương ứng với tab được chọn
       bottomNavigationBar: BottomNavigationBar(
@@ -79,48 +80,36 @@ class _CustomerHomeState extends State<CustomerHome> {
   }
 
   /// Xây dựng màn hình tab Trang chủ cho khách hàng.
-  /// Bao gồm Header và danh sách các thẻ thông tin.
+  /// Bao gồm danh sách các thẻ thông tin. (Header đã được chuyển lên AppBar)
   Widget _buildHomeTab() {
-    return SafeArea(
-      child: Column(
-        children: [
-          // Sử dụng widget Header đã import
-          Header(name: widget.name), // Truyền tên người dùng vào Header
-          const SizedBox(
-            height: 16,
-          ), // Khoảng cách giữa Header và nội dung chính
-          // Nội dung chính của tab Trang chủ
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-              ), // Padding cho ListView
-              children: [
-                // Các thẻ thông tin với dữ liệu động cho khách hàng
-                _buildStatCard(
-                  'Tổng đơn hàng của bạn:',
-                  _customerOrdersCount, // Sử dụng biến dữ liệu giả định
-                  Icons.shopping_bag,
-                  const Color(0xFFE3F2FD), // Light blue
-                ),
-                _buildStatCard(
-                  'Yêu cầu hỗ trợ đang chờ:',
-                  _pendingSupportTickets, // Sử dụng biến dữ liệu giả định
-                  Icons.support_agent,
-                  const Color(0xFFFFFDE7), // Light yellow
-                ),
-                _buildStatCard(
-                  'Điểm tích lũy:',
-                  _loyaltyPoints, // Sử dụng biến dữ liệu giả định
-                  Icons.star,
-                  const Color(0xFFE8F5E9), // Light green
-                ),
-                // Bạn có thể thêm các thẻ khác như "Ưu đãi đặc biệt", "Sản phẩm yêu thích" v.v.
-              ],
-            ),
-          ),
-        ],
+    return ListView(
+      // Đổi từ SafeArea(child: Column(...)) thành ListView trực tiếp
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 16, // Thêm padding trên và dưới cho nội dung
       ),
+      children: [
+        // Các thẻ thông tin với dữ liệu động cho khách hàng
+        _buildStatCard(
+          'Tổng đơn hàng của bạn:',
+          _customerOrdersCount, // Sử dụng biến dữ liệu giả định
+          Icons.shopping_bag,
+          const Color(0xFFE3F2FD), // Light blue
+        ),
+        _buildStatCard(
+          'Yêu cầu hỗ trợ đang chờ:',
+          _pendingSupportTickets, // Sử dụng biến dữ liệu giả định
+          Icons.support_agent,
+          const Color(0xFFFFFDE7), // Light yellow
+        ),
+        _buildStatCard(
+          'Điểm tích lũy:',
+          _loyaltyPoints, // Sử dụng biến dữ liệu giả định
+          Icons.star,
+          const Color(0xFFE8F5E9), // Light green
+        ),
+        // Bạn có thể thêm các thẻ khác như "Ưu đãi đặc biệt", "Sản phẩm yêu thích" v.v.
+      ],
     );
   }
 
