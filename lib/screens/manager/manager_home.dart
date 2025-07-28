@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../profile.dart'; // CommonProfile
-import '../customer/order.dart'; // ManagerOrder (giả định)
+import '../order.dart'; // ManagerOrder (giả định)
 import '../customer/customer_support.dart'; // ManagerCustomerSupport (giả định)
 import '../../widgets/header.dart'; // Header
 import 'dashboard.dart'; // ManagerDashboardContent

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sonxemaycantho/screens/export_order.dart';
 import 'package:sonxemaycantho/screens/order_entry.dart';
 
 class OrderContent extends StatelessWidget {
@@ -36,7 +37,6 @@ class OrderContent extends StatelessWidget {
                   text: 'Đơn nhập',
                   color: Colors.lightBlue.shade50, // Keep tile background color
                   onTap: () {
-                    // Navigate to OrderEntry when 'Đơn nhập' is tapped
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -52,7 +52,14 @@ class OrderContent extends StatelessWidget {
                   text: 'Đơn xuất',
                   color: Colors.green.shade50, // Keep tile background color
                   onTap: () {
-                    // TODO: Navigator.push to ExportOrder
+                    // Điều hướng đến màn hình ExportOrder
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const ExportOrder(), // Điều hướng đến ExportOrder
+                      ),
+                    );
                     print('Đơn xuất tapped!');
                   },
                 ),
@@ -66,16 +73,16 @@ class OrderContent extends StatelessWidget {
                     print('Đơn tồn kho tapped!');
                   },
                 ),
-                _buildFunctionTile(
-                  context,
-                  icon: Icons.broken_image_outlined,
-                  text: 'Đơn bị hư hỏng',
-                  color: Colors.red.shade50, // Keep tile background color
-                  onTap: () {
-                    // TODO: Navigator.push to BrokenOrder
-                    print('Đơn bị hư hỏng tapped!');
-                  },
-                ),
+                // _buildFunctionTile(
+                //   context,
+                //   icon: Icons.broken_image_outlined,
+                //   text: 'Đơn bị hư hỏng',
+                //   color: Colors.red.shade50, // Keep tile background color
+                //   onTap: () {
+                //     // TODO: Navigator.push to BrokenOrder
+                //     print('Đơn bị hư hỏng tapped!');
+                //   },
+                // ),
                 const SizedBox(height: 20),
               ],
             ),
