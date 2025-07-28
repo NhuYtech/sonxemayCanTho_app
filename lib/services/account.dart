@@ -49,4 +49,14 @@ class AccountService {
     // 👉 Trả về user kèm ID
     return {'id': doc.id, ...user};
   }
+
+  Future<Map<String, dynamic>?> getAccountById(String uid) async {
+    try {
+      final doc = await _accountCollection.doc(uid).get();
+      if (doc.exists) return doc.data() as Map<String, dynamic>;
+    } catch (e) {
+      print('Error getting account by UID $uid: $e');
+    }
+    return null;
+  }
 }

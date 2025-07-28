@@ -94,4 +94,14 @@ class UserService {
       print('No updates provided for user $uid profile.');
     }
   }
+
+  Future<Map<String, dynamic>?> getUserById(String uid) async {
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) return doc.data() as Map<String, dynamic>;
+    } catch (e) {
+      print('Error getting user by UID $uid: $e');
+    }
+    return null;
+  }
 }

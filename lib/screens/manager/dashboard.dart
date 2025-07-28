@@ -1,7 +1,6 @@
 // lib/screens/dashboard.dart
 import 'package:flutter/material.dart';
 
-// ManagerDashboardContent remains a StatelessWidget, receiving data
 class ManagerDashboardContent extends StatelessWidget {
   final String revenue;
   final String totalOrders;
@@ -9,6 +8,7 @@ class ManagerDashboardContent extends StatelessWidget {
   final String damagedItems;
   final String customerCount;
   final String staffCount;
+  final bool isLoading;
 
   const ManagerDashboardContent({
     super.key,
@@ -18,12 +18,12 @@ class ManagerDashboardContent extends StatelessWidget {
     required this.damagedItems,
     required this.customerCount,
     required this.staffCount,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      // Removed Expanded as it will be in the parent's Column
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
         _buildStatCard(
@@ -33,23 +33,24 @@ class ManagerDashboardContent extends StatelessWidget {
           const Color(0xFFE3F2FD),
         ),
         _buildStatCard(
-          'Tổng đơn hàng:',
-          totalOrders,
-          Icons.shopping_cart,
-          const Color(0xFFE8F5E9),
-        ),
-        _buildStatCard(
           'Tổng đơn nhập:',
           stockQuantity, // Displaying the fetched count here
           Icons.warehouse,
           const Color(0xFFFFFDE7),
+          isHighlighted: true, // Highlight the import orders card
         ),
         _buildStatCard(
-          'Hàng hư hỏng:',
-          damagedItems,
-          Icons.broken_image,
-          const Color(0xFFFFEBEE),
+          'Tổng đơn xuất:',
+          totalOrders,
+          Icons.shopping_cart,
+          const Color(0xFFE8F5E9),
         ),
+        // _buildStatCard(
+        //   'Hàng hư hỏng:',
+        //   damagedItems,
+        //   Icons.broken_image,
+        //   const Color(0xFFFFEBEE),
+        // ),
         _buildStatCard(
           'Tổng khách hàng:',
           customerCount,
@@ -70,14 +71,16 @@ class ManagerDashboardContent extends StatelessWidget {
     String title,
     String value,
     IconData icon,
-    Color color,
-  ) {
+    Color color, {
+    bool isHighlighted = false,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(12),
+        border: isHighlighted ? Border.all(color: Colors.blue, width: 2) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -100,13 +103,26 @@ class ManagerDashboardContent extends StatelessWidget {
                   style: const TextStyle(fontSize: 16, color: Colors.black54),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+                Row(
+                  children: [
+                    if (isLoading && title.contains('đơn nhập'))
+                      const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    else
+                      Expanded(
+                        child: Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),

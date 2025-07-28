@@ -9,12 +9,12 @@ import 'screens/manager/manager_home.dart';
 import 'screens/role.dart';
 import 'services/auth.dart';
 import 'services/user.dart';
+import 'services/account.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Tránh lỗi duplicate Firebase app
     if (Firebase.apps.isEmpty) {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
@@ -50,8 +50,11 @@ class MyApp extends StatelessWidget {
           }
 
           if (snapshot.hasData) {
+            final currentUser = snapshot.data!;
+            final uid = currentUser.uid;
+
             return FutureBuilder<String>(
-              future: UserService().getCurrentUserRole(),
+              future: determineUserRole(uid),
               builder: (context, roleSnapshot) {
                 if (roleSnapshot.connectionState == ConnectionState.waiting) {
                   return const Scaffold(
@@ -60,7 +63,7 @@ class MyApp extends StatelessWidget {
                 }
 
                 final role = roleSnapshot.data ?? 'customer';
-                final name = snapshot.data?.displayName ?? 'Người dùng';
+                final name = currentUser.displayName ?? 'Người dùng';
 
                 switch (role.toLowerCase()) {
                   case 'manager':
@@ -79,5 +82,18 @@ class MyApp extends StatelessWidget {
         },
       ),
     );
+  }
+
+  /// Kiểm tra vai trò dựa vào UID:
+  /// - Nếu có trong `Account` -> trả về `role` (manager/staff)
+  /// - Nếu có trong `User` -> trả về `customer`
+  Future<String> determineUserRole(String uid) async {
+    final account = await AccountService().getAccountById(uid);
+    if (account != null) return account['role'];
+
+    final user = await UserService().getUserById(uid);
+    if (user != null) return 'customer';
+
+    return 'customer'; // Mặc định
   }
 }
