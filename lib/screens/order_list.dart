@@ -26,7 +26,10 @@ class _OrderListState extends State<OrderList> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('serviceOrders').orderBy('createDate', descending: true).snapshots(),
+        stream: _firestore
+            .collection('serviceOrders')
+            .orderBy('createDate', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Đã xảy ra lỗi: ${snapshot.error}'));
@@ -42,7 +45,10 @@ class _OrderListState extends State<OrderList> {
 
           // Convert QuerySnapshot to a list of ServiceOrder objects
           final List<ServiceOrder> orders = snapshot.data!.docs.map((doc) {
-            return ServiceOrder.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+            return ServiceOrder.fromMap(
+              doc.data() as Map<String, dynamic>,
+              doc.id,
+            );
           }).toList();
 
           return ListView.builder(
@@ -79,14 +85,19 @@ class _OrderListState extends State<OrderList> {
                         const SizedBox(height: 8),
                         Text(
                           'Ngày gửi: ${DateFormat('dd/MM/yyyy HH:mm').format(order.createDate)}',
-                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Trạng thái: ${order.status}',
                           style: TextStyle(
                             fontSize: 14,
-                            color: order.status == 'Chưa kiểm' ? Colors.orange : Colors.green,
+                            color: order.status == 'Chưa kiểm'
+                                ? Colors.orange
+                                : Colors.green,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -95,7 +106,10 @@ class _OrderListState extends State<OrderList> {
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               'Ghi chú chung: ${order.note}',
-                              style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                              ),
                             ),
                           ),
                         const SizedBox(height: 12),
@@ -104,11 +118,16 @@ class _OrderListState extends State<OrderList> {
                           child: TextButton(
                             onPressed: () {
                               // TODO: Implement navigation to detail screen
-                              print('Button Xem chi tiết cho đơn hàng: ${order.id}');
+                              print(
+                                'Button Xem chi tiết cho đơn hàng: ${order.id}',
+                              );
                             },
                             child: const Text(
                               'Xem chi tiết',
-                              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),

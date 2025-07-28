@@ -1,7 +1,7 @@
 // lib/screens/manager/export_order.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // For date formatting
+import 'package:intl/intl.dart';
 
 class ExportOrder extends StatefulWidget {
   const ExportOrder({super.key});
@@ -20,11 +20,18 @@ class _ExportOrderState extends State<ExportOrder> {
   final TextEditingController _noteController = TextEditingController();
   final TextEditingController _serviceOrderIdController =
       TextEditingController();
-  DateTime? _selectedExportDate;
-  final TextEditingController _createdByController =
-      TextEditingController(); // For demo purposes, replace with actual user ID
+  final TextEditingController _createdByController = TextEditingController();
 
-  bool _isAddingOrder = false; // To show loading indicator on add button
+  DateTime? _selectedExportDate;
+  bool _isAddingOrder = false;
+  List<DocumentSnapshot> _serviceOrders =
+      []; // Cache service orders for dropdown
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServiceOrders();
+  }
 
   @override
   void dispose() {
@@ -34,6 +41,21 @@ class _ExportOrderState extends State<ExportOrder> {
     _serviceOrderIdController.dispose();
     _createdByController.dispose();
     super.dispose();
+  }
+
+  // Load service orders for dropdown selection
+  Future<void> _loadServiceOrders() async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('serviceOrders')
+          .get();
+      setState(() {
+        _serviceOrders = snapshot.docs;
+      });
+      print('📋 Đã load ${_serviceOrders.length} service orders');
+    } catch (e) {
+      print('❌ Lỗi load service orders: $e');
+    }
   }
 
   // Function to pick a date
@@ -46,10 +68,8 @@ class _ExportOrderState extends State<ExportOrder> {
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
-            primaryColor: const Color(0xFFC1473B), // Header background color
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFFC1473B),
-            ), // Selected day color
+            primaryColor: const Color(0xFFC1473B),
+            colorScheme: const ColorScheme.light(primary: Color(0xFFC1473B)),
             buttonTheme: const ButtonThemeData(
               textTheme: ButtonTextTheme.primary,
             ),
@@ -65,14 +85,39 @@ class _ExportOrderState extends State<ExportOrder> {
     }
   }
 
+  // Validate service order exists
+  Future<bool> _validateServiceOrder(String serviceOrderId) async {
+    try {
+      DocumentSnapshot doc = await _firestore
+          .collection('serviceOrders')
+          .doc(serviceOrderId)
+          .get();
+      return doc.exists;
+    } catch (e) {
+      print('❌ Lỗi validate service order: $e');
+      return false;
+    }
+  }
+
   // Function to add a new export order to Firestore
   Future<void> _addExportOrder() async {
-    if (_customerStoreNameController.text.isEmpty ||
-        _quantityController.text.isEmpty ||
+    // Validation
+    if (_customerStoreNameController.text.trim().isEmpty ||
+        _quantityController.text.trim().isEmpty ||
         _selectedExportDate == null ||
-        _serviceOrderIdController.text.isEmpty ||
-        _createdByController.text.isEmpty) {
-      _showSnackBar('Vui lòng điền đầy đủ thông tin.', Colors.red);
+        _serviceOrderIdController.text.trim().isEmpty ||
+        _createdByController.text.trim().isEmpty) {
+      _showSnackBar('❌ Vui lòng điền đầy đủ thông tin.', Colors.red);
+      return;
+    }
+
+    // Validate quantity is a positive number and show UI feedback
+    int? quantity = int.tryParse(_quantityController.text.trim());
+    if (quantity == null || quantity <= 0) {
+      _showSnackBar(
+        '❌ Số lượng phải là số nguyên dương lớn hơn 0.',
+        Colors.red,
+      );
       return;
     }
 
@@ -81,30 +126,43 @@ class _ExportOrderState extends State<ExportOrder> {
     });
 
     try {
-      await _firestore.collection('exportOrders').add({
-        'customerStoreName': _customerStoreNameController.text.trim(),
-        'exportDate': Timestamp.fromDate(_selectedExportDate!),
-        'note': _noteController.text.trim(),
-        'quantity': int.parse(_quantityController.text.trim()),
-        'serviceOrderId': _serviceOrderIdController.text.trim(),
-        'createdBy': _createdByController.text
-            .trim(), // In a real app, this would come from FirebaseAuth.currentUser.uid
-      });
+      // Validate service order exists
+      bool serviceOrderExists = await _validateServiceOrder(
+        _serviceOrderIdController.text.trim(),
+      );
+      if (!serviceOrderExists) {
+        _showSnackBar('❌ Mã đơn dịch vụ không tồn tại.', Colors.red);
+        setState(() {
+          _isAddingOrder = false;
+        });
+        return;
+      }
+
+      // Create export order
+      DocumentReference docRef = await _firestore
+          .collection('exportOrders')
+          .add({
+            'customerStoreName': _customerStoreNameController.text.trim(),
+            'exportDate': Timestamp.fromDate(_selectedExportDate!),
+            'note': _noteController.text.trim().isEmpty
+                ? ''
+                : _noteController.text.trim(),
+            'quantity': quantity,
+            'serviceOrderId': _serviceOrderIdController.text.trim(),
+            'createdBy': _createdByController.text.trim(),
+            'createdAt': FieldValue.serverTimestamp(), // Add creation timestamp
+          });
+
+      print('✅ Đã tạo export order: ${docRef.id}');
 
       // Clear form fields
-      _customerStoreNameController.clear();
-      _quantityController.clear();
-      _noteController.clear();
-      _serviceOrderIdController.clear();
-      _createdByController.clear();
-      setState(() {
-        _selectedExportDate = null;
-      });
+      _clearForm();
 
-      _showSnackBar('Đơn xuất đã được thêm thành công!', Colors.green);
-      Navigator.pop(context); // Close the dialog/bottom sheet
+      _showSnackBar('✅ Đơn xuất đã được thêm thành công!', Colors.green);
+      Navigator.pop(context);
     } catch (e) {
-      _showSnackBar('Lỗi khi thêm đơn xuất: $e', Colors.red);
+      print('❌ Lỗi khi thêm đơn xuất: $e');
+      _showSnackBar('❌ Lỗi khi thêm đơn xuất: $e', Colors.red);
     } finally {
       setState(() {
         _isAddingOrder = false;
@@ -112,160 +170,254 @@ class _ExportOrderState extends State<ExportOrder> {
     }
   }
 
+  // Clear form
+  void _clearForm() {
+    _customerStoreNameController.clear();
+    _quantityController.clear();
+    _noteController.clear();
+    _serviceOrderIdController.clear();
+    _createdByController.clear();
+    setState(() {
+      _selectedExportDate = null;
+    });
+  }
+
   // Function to show a SnackBar message
   void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // Show service order selection dialog
+  void _showServiceOrderDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Chọn Đơn Dịch Vụ'),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: _serviceOrders.isEmpty
+                ? const Center(child: Text('Không có đơn dịch vụ nào'))
+                : ListView.builder(
+                    itemCount: _serviceOrders.length,
+                    itemBuilder: (context, index) {
+                      var order = _serviceOrders[index];
+                      var data = order.data() as Map<String, dynamic>;
+
+                      return ListTile(
+                        title: Text('ID: ${order.id}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Khách hàng: ${data['customerName'] ?? 'N/A'}',
+                            ),
+                            Text('Trạng thái: ${data['status'] ?? 'N/A'}'),
+                          ],
+                        ),
+                        onTap: () {
+                          _serviceOrderIdController.text = order.id;
+                          Navigator.pop(context);
+                        },
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Function to show the add export order form
   void _showAddExportOrderForm() {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // Allows the sheet to take full height
+      isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 16,
-            right: 16,
-            top: 16,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Thêm Đơn Xuất Mới',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: const Color(
-                      0xFFC1473B,
-                    ), // Matching OrderEntry title color
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _customerStoreNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Tên Khách Hàng/Cửa Hàng',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        12,
-                      ), // Rounded corners
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Thêm Đơn Xuất',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFFC1473B),
+                          ),
                     ),
-                    prefixIcon: const Icon(Icons.store), // Icon
-                  ),
-                ),
-                const SizedBox(height: 10),
-                GestureDetector(
-                  onTap: () => _selectDate(context),
-                  child: AbsorbPointer(
-                    child: TextField(
+                    const SizedBox(height: 20),
+
+                    // Customer Store Name
+                    TextField(
+                      controller: _customerStoreNameController,
                       decoration: InputDecoration(
-                        labelText: _selectedExportDate == null
-                            ? 'Chọn Ngày Xuất'
-                            : 'Ngày Xuất: ${DateFormat('dd/MM/yyyy').format(_selectedExportDate!)}',
+                        labelText: 'Tên cửa hàng',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(
-                            12,
-                          ), // Rounded corners
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        prefixIcon: const Icon(Icons.calendar_today), // Icon
+                        prefixIcon: const Icon(Icons.store),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _quantityController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Số Lượng',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        12,
-                      ), // Rounded corners
-                    ),
-                    prefixIcon: const Icon(Icons.numbers), // Icon
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _noteController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: 'Ghi Chú',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        12,
-                      ), // Rounded corners
-                    ),
-                    prefixIcon: const Icon(Icons.note_alt), // Icon
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _serviceOrderIdController,
-                  decoration: InputDecoration(
-                    labelText: 'ID Đơn Dịch Vụ',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        12,
-                      ), // Rounded corners
-                    ),
-                    prefixIcon: const Icon(Icons.receipt_long), // Icon
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _createdByController,
-                  decoration: InputDecoration(
-                    labelText: 'Người Tạo (ID)',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        12,
-                      ), // Rounded corners
-                    ),
-                    prefixIcon: const Icon(Icons.person), // Icon
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isAddingOrder ? null : _addExportOrder,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(
-                      0xFFC1473B,
-                    ), // Matching OrderEntry button color
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30), // Rounded button
-                    ),
-                    elevation: 5,
-                  ),
-                  child: _isAddingOrder
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Thêm Đơn Xuất',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(height: 10),
+
+                    // Export Date Picker
+                    GestureDetector(
+                      onTap: () async {
+                        await _selectDate(context);
+                        setModalState(() {}); // Update modal state
+                      },
+                      child: AbsorbPointer(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            labelText: _selectedExportDate == null
+                                ? 'Chọn ngày xuất'
+                                : 'Ngày Xuất: ${DateFormat('dd/MM/yyyy').format(_selectedExportDate!)}',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            prefixIcon: const Icon(Icons.calendar_today),
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Quantity with validation
+                    TextField(
+                      controller: _quantityController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Số lượng',
+                        hintText: 'Nhập số lượng (>0)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.numbers),
+                      ),
+                      onChanged: (value) {
+                        // Real-time validation
+                        int? qty = int.tryParse(value);
+                        if (qty != null && qty <= 0) {
+                          // Show error hint
+                          setModalState(() {});
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Note (Optional)
+                    TextField(
+                      controller: _noteController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Ghi chú (nếu có)',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.note_alt),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Service Order ID with selection
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _serviceOrderIdController,
+                            decoration: InputDecoration(
+                              labelText: 'Mã đơn nhập',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              prefixIcon: const Icon(Icons.receipt_long),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _showServiceOrderDialog,
+                          icon: const Icon(Icons.search),
+                          tooltip: 'Chọn từ danh sách',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Created By
+                    TextField(
+                      controller: _createdByController,
+                      decoration: InputDecoration(
+                        labelText: 'Người tạo đơn',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: const Icon(Icons.person),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Add Button
+                    ElevatedButton(
+                      onPressed: _isAddingOrder ? null : _addExportOrder,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFC1473B),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 15,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 5,
+                      ),
+                      child: _isAddingOrder
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              'Thêm Đơn Xuất',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ),
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
+
+  // Export orders cannot be deleted - business rule
+  // Once exported, the record is permanent for audit purposes
 
   @override
   Widget build(BuildContext context) {
@@ -273,39 +425,45 @@ class _ExportOrderState extends State<ExportOrder> {
       appBar: AppBar(
         title: const Text(
           'Quản Lý Đơn Xuất',
-          style: TextStyle(
-            color: Colors.white,
-          ), // Matching OrderEntry title color
+          style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: const Color(
-          0xFFC1473B,
-        ), // Matching OrderEntry app bar color
-        iconTheme: const IconThemeData(
-          color: Colors.white,
-        ), // Matching OrderEntry icon color
+        backgroundColor: const Color(0xFFC1473B),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('exportOrders').snapshots(),
+        stream: _firestore
+            .collection('exportOrders')
+            .orderBy('exportDate', descending: true) // Sort by newest first
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Lỗi: ${snapshot.error}'));
+            return Center(child: Text('❌ Lỗi: ${snapshot.error}'));
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFFC1473B)),
+            );
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
-              child: Text(
-                'Chưa có đơn xuất nào.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Chưa có đơn xuất nào.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16.0), // Consistent padding
+            padding: const EdgeInsets.all(16.0),
             itemCount: snapshot.data!.docs.length,
             itemBuilder: (context, index) {
               DocumentSnapshot document = snapshot.data!.docs[index];
@@ -321,65 +479,118 @@ class _ExportOrderState extends State<ExportOrder> {
               }
 
               return Card(
-                margin: const EdgeInsets.only(
-                  bottom: 16.0,
-                ), // Consistent margin
-                elevation: 3, // Matching OrderEntry card elevation
+                margin: const EdgeInsets.only(bottom: 16.0),
+                elevation: 3,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    15,
-                  ), // Matching OrderEntry card radius
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Cửa hàng: ${data['customerStoreName'] ?? 'N/A'}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Color(
-                            0xFFC1473B,
-                          ), // Matching OrderEntry title color
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '🏪 ${data['customerStoreName'] ?? 'N/A'}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Color(0xFFC1473B),
+                              ),
+                            ),
+                          ),
+                          // No delete button - export orders are permanent records
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Ngày xuất: $exportDate',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Ngày xuất: $exportDate',
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Số lượng: ${data['quantity'] ?? 'N/A'}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.inventory_2,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Số lượng: ${data['quantity'] ?? 'N/A'}',
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Ghi chú: ${data['note'] ?? 'N/A'}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
+                      if (data['note'] != null &&
+                          data['note'].toString().isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.note_alt,
+                              size: 16,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Ghi chú: ${data['note']}',
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            ),
+                          ],
                         ),
+                      ],
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.receipt_long,
+                            size: 16,
+                            color: Colors.blue,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Đơn dịch vụ: ${data['serviceOrderId'] ?? 'N/A'}',
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                decoration: TextDecoration.underline,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'ID Đơn dịch vụ: ${data['serviceOrderId'] ?? 'N/A'}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        'Người tạo: ${data['createdBy'] ?? 'N/A'}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.black87,
-                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.person,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Người tạo: ${data['createdBy'] ?? 'N/A'}',
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -391,9 +602,7 @@ class _ExportOrderState extends State<ExportOrder> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddExportOrderForm,
-        backgroundColor: const Color(
-          0xFFC1473B,
-        ), // Matching OrderEntry button color
+        backgroundColor: const Color(0xFFC1473B),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
