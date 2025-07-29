@@ -34,10 +34,10 @@ class ManagerDashboardContent extends StatelessWidget {
         ),
         _buildStatCard(
           'Tổng đơn nhập:',
-          stockQuantity, // Displaying the fetched count here
+          stockQuantity,
           Icons.warehouse,
           const Color(0xFFFFFDE7),
-          isHighlighted: true, // Highlight the import orders card
+          isHighlighted: true,
         ),
         _buildStatCard(
           'Tổng đơn xuất:',

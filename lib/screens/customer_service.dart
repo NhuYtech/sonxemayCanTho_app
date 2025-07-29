@@ -25,13 +25,12 @@ class _CustomerSupportState extends State<CustomerSupport> {
 
   String? _currentChatId;
   String? _currentUserId;
-  bool _isChatLoading =
-      true; // Khởi tạo là true, không cần setState ngay lập tức
+  bool _isChatLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _initializeChat(); // Gọi hàm khởi tạo chat
+    _initializeChat();
   }
 
   @override
@@ -41,16 +40,12 @@ class _CustomerSupportState extends State<CustomerSupport> {
     super.dispose();
   }
 
-  // Hàm mới để quản lý toàn bộ quá trình khởi tạo chat
   void _initializeChat() async {
     debugPrint('>>> _initializeChat: Starting chat initialization.');
-    // Không cần setState ở đây vì _isChatLoading đã là true khi khởi tạo State
 
-    // Bước 1: Lấy thông tin người dùng hiện tại
     final user = _auth.currentUser;
     if (user != null) {
       if (mounted) {
-        // Kiểm tra mounted trước khi cập nhật _currentUserId
         setState(() {
           _currentUserId = user.uid;
         });
@@ -60,22 +55,19 @@ class _CustomerSupportState extends State<CustomerSupport> {
       debugPrint(
         '>>> _initializeChat: No user currently signed in. _currentUserId is null.',
       );
-      // Xử lý trường hợp không có người dùng đăng nhập (ví dụ: chuyển hướng đến màn hình đăng nhập)
       if (mounted) {
         setState(() {
-          _isChatLoading = false; // Dừng loading nếu không có người dùng
+          _isChatLoading = false;
         });
       }
       return;
     }
 
-    // Bước 2: Tìm hoặc tạo chat ID
     await _findOrCreateChat();
 
     if (mounted) {
-      // Kiểm tra mounted trước khi cập nhật _isChatLoading cuối cùng
       setState(() {
-        _isChatLoading = false; // Hoàn thành tải, ẩn loading
+        _isChatLoading = false;
       });
     }
     debugPrint(
@@ -84,9 +76,6 @@ class _CustomerSupportState extends State<CustomerSupport> {
   }
 
   Future<void> _findOrCreateChat() async {
-    // Đây là ID của khách hàng mà quản lý đang muốn hỗ trợ
-    // Trong ứng dụng thực tế, ID này có thể được truyền vào qua constructor của widget
-    // hoặc được chọn từ danh sách các cuộc trò chuyện đang chờ.
     final String customerIdForThisChat = '6YHcpasDKZQIQFacavCgWnTNZca2';
 
     debugPrint('>>> _findOrCreateChat: Attempting to find/create chat.');
@@ -134,7 +123,6 @@ class _CustomerSupportState extends State<CustomerSupport> {
 
       if (foundChatId != null) {
         if (mounted) {
-          // Kiểm tra mounted
           setState(() {
             _currentChatId = foundChatId;
           });
@@ -154,7 +142,6 @@ class _CustomerSupportState extends State<CustomerSupport> {
           'createdAt': FieldValue.serverTimestamp(),
         });
         if (mounted) {
-          // Kiểm tra mounted
           setState(() {
             _currentChatId = newChatDoc.id;
           });
@@ -165,8 +152,6 @@ class _CustomerSupportState extends State<CustomerSupport> {
       }
     } catch (e) {
       debugPrint('>>> _findOrCreateChat: Error finding or creating chat: $e');
-      // Không cần setState ở đây vì _isChatLoading sẽ được set false ở _initializeChat()
-      // hoặc bạn có thể thêm một biến trạng thái lỗi riêng nếu muốn hiển thị thông báo lỗi cụ thể.
     }
   }
 
@@ -205,9 +190,8 @@ class _CustomerSupportState extends State<CustomerSupport> {
       debugPrint(
         '>>> _sendMessage: Message sent successfully. Clearing text field.',
       );
-      // Cuộn xuống cuối danh sách tin nhắn
       _scrollController.animateTo(
-        0.0, // Đảo ngược danh sách nên 0.0 là cuối
+        0.0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -235,27 +219,22 @@ class _CustomerSupportState extends State<CustomerSupport> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Thêm Scaffold để có AppBar
       appBar: AppBar(
-        title: Text(
-          'Hỗ trợ khách hàng: ${widget.name}',
-        ), // Hiển thị tên từ widget.name
-        backgroundColor: Colors.red, // Màu sắc AppBar
+        title: Text('Hỗ trợ khách hàng: ${widget.name}'),
+        backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child:
-                  _isChatLoading // Hiển thị loading nếu chat đang được khởi tạo
+              child: _isChatLoading
                   ? const Center(
                       child: CircularProgressIndicator(
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
                       ),
                     )
-                  : _currentChatId ==
-                        null // Nếu không loading mà _currentChatId vẫn null (có lỗi)
+                  : _currentChatId == null
                   ? const Center(
                       child: Text(
                         'Không thể tải cuộc trò chuyện. Vui lòng thử lại.',
@@ -306,9 +285,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                           final currentUserIsSender =
                               (messageSenderId == _currentUserId);
 
-                          // Đánh dấu tin nhắn là đã đọc nếu nó không phải của người dùng hiện tại và chưa đọc
                           if (!currentUserIsSender && !isRead) {
-                            // Sử dụng Future.microtask để tránh lỗi setState trong khi build
                             Future.microtask(
                               () => _markMessageAsRead(
                                 _currentChatId!,
@@ -350,11 +327,8 @@ class _CustomerSupportState extends State<CustomerSupport> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: currentUserIsSender
-                                              ? const Color(
-                                                  0xFFB3E5FC,
-                                                ) // Màu xanh nhạt cho tin nhắn của mình
-                                              : Colors
-                                                    .white, // Màu trắng cho tin nhắn của người khác
+                                              ? const Color(0xFFB3E5FC)
+                                              : Colors.white,
                                           borderRadius: BorderRadius.only(
                                             topLeft: const Radius.circular(16),
                                             topRight: const Radius.circular(16),
@@ -433,8 +407,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                         }
                         return ListView(
                           controller: _scrollController,
-                          reverse:
-                              true, // Hiển thị tin nhắn mới nhất ở dưới cùng
+                          reverse: true,
                           padding: const EdgeInsets.all(12),
                           children: messageBubbles,
                         );
@@ -442,7 +415,6 @@ class _CustomerSupportState extends State<CustomerSupport> {
                     ),
             ),
 
-            // Ô nhập tin nhắn
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
@@ -487,7 +459,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                             );
                           }
                         },
-                        maxLines: null, // Cho phép nhiều dòng
+                        maxLines: null,
                         keyboardType: TextInputType.multiline,
                       ),
                     ),
@@ -508,7 +480,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red, // Màu nút gửi
+                        color: Colors.red,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(

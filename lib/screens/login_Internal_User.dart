@@ -3,7 +3,7 @@ import 'package:sonxemaycantho/services/account.dart';
 import 'customer/customer_home.dart';
 import 'staff/staff_home.dart';
 import 'manager/manager_home.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginInternalUser extends StatefulWidget {
   const LoginInternalUser({super.key});
@@ -38,13 +38,6 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
       );
 
       if (userData != null) {
-        // --- BƯỚC MỚI: Đăng nhập vào Firebase Authentication ---
-        // Chúng ta cần một Firebase Auth UID để sử dụng với Firestore Security Rules
-        // và để _currentUserId trong ManagerCustomerSupport không bị null.
-        // signInAnonymously() sẽ cung cấp một UID duy nhất cho phiên làm việc này.
-        // Lưu ý: Đối với ứng dụng thực tế, nếu bạn muốn liên kết tài khoản tùy chỉnh
-        // với Firebase Auth một cách bền vững, bạn nên sử dụng Custom Token Authentication
-        // (yêu cầu backend của bạn tạo token Firebase Auth).
         UserCredential userCredential = await FirebaseAuth.instance
             .signInAnonymously();
         String? firebaseAuthUid = userCredential.user?.uid;
@@ -55,7 +48,6 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
           return;
         }
 
-        // In ra Firebase Auth UID để bạn có thể kiểm tra và cập nhật Firestore
         debugPrint(
           '>>> LoginInternalUser: Đăng nhập tùy chỉnh thành công. Firebase Auth UID: $firebaseAuthUid',
         );
@@ -148,7 +140,6 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
 
                 const SizedBox(height: 40),
 
-                // Label SỐ ĐIỆN THOẠI
                 const Text(
                   'Số điện thoại',
                   style: TextStyle(
@@ -180,7 +171,6 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
 
                 const SizedBox(height: 20),
 
-                // Label MẬT KHẨU
                 const Text(
                   'Mật khẩu',
                   style: TextStyle(
@@ -224,7 +214,6 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
 
                 const SizedBox(height: 32),
 
-                // Nút ĐĂNG NHẬP
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

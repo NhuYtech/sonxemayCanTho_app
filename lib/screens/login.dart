@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'manager/manager_home.dart'; // Corrected import: manage_home.dart -> manager_home.dart
+import 'manager/manager_home.dart';
 import 'staff/staff_home.dart';
 import 'customer/customer_home.dart';
 import 'register.dart';
@@ -21,33 +21,27 @@ class _LoginState extends State<Login> {
     setState(() => _isGoogleLoading = true);
 
     try {
-      // Thay đổi ở đây: signInWithGoogle giờ đây trả về User? trực tiếp
       final user = await _authService.signInWithGoogle();
-      if (!mounted) return; // Kiểm tra mounted sau await
+      if (!mounted) return;
 
       if (user != null) {
-        // Lấy vai trò và tên người dùng
         final role = await UserService().getCurrentUserRole();
         final name = user.displayName ?? 'Người dùng';
 
         Widget nextScreen;
         if (role == 'manager') {
-          nextScreen = ManagerHome(
-            name: name,
-          ); // Corrected typo: ManageHome -> ManagerHome
+          nextScreen = ManagerHome(name: name);
         } else if (role == 'staff') {
           nextScreen = StaffHome(name: name);
         } else {
           nextScreen = CustomerHome(name: name);
         }
 
-        // Điều hướng đến màn hình phù hợp
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => nextScreen),
         );
       } else {
-        // Xử lý trường hợp người dùng hủy đăng nhập hoặc đăng nhập thất bại
         _showErrorDialog('Đăng nhập Google không thành công hoặc đã bị hủy.');
       }
     } catch (e) {
@@ -86,11 +80,9 @@ class _LoginState extends State<Login> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
                 Image.asset('assets/logo/logo1.png', width: 180),
                 const SizedBox(height: 30),
 
-                // Tên app
                 const Text(
                   'Sơn Xe Máy\nCần Thơ',
                   textAlign: TextAlign.center,
@@ -103,7 +95,6 @@ class _LoginState extends State<Login> {
                 ),
                 const SizedBox(height: 50),
 
-                // Nút Google
                 ElevatedButton.icon(
                   onPressed: _isGoogleLoading ? null : _handleGoogleSignIn,
                   style: ElevatedButton.styleFrom(
@@ -149,7 +140,6 @@ class _LoginState extends State<Login> {
 
                 const SizedBox(height: 50),
 
-                // Chưa có tài khoản
                 const Text(
                   'Nếu bạn chưa có tài khoản\nVui lòng Đăng ký để tiếp tục',
                   textAlign: TextAlign.center,

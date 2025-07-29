@@ -22,7 +22,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       currentIndex: widget.selectedIndex,
       selectedItemColor: Colors.red,
       unselectedItemColor: Colors.black,
-      onTap: widget.onItemTapped, // Sử dụng callback từ bên ngoài
+      onTap: widget.onItemTapped,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
         BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Đơn hàng'),

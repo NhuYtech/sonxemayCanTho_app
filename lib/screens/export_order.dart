@@ -13,7 +13,6 @@ class ExportOrder extends StatefulWidget {
 class _ExportOrderState extends State<ExportOrder> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Controllers for the form fields
   final TextEditingController _customerStoreNameController =
       TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
@@ -24,8 +23,7 @@ class _ExportOrderState extends State<ExportOrder> {
 
   DateTime? _selectedExportDate;
   bool _isAddingOrder = false;
-  List<DocumentSnapshot> _serviceOrders =
-      []; // Cache service orders for dropdown
+  List<DocumentSnapshot> _serviceOrders = [];
 
   @override
   void initState() {
@@ -43,7 +41,6 @@ class _ExportOrderState extends State<ExportOrder> {
     super.dispose();
   }
 
-  // Load service orders for dropdown selection
   Future<void> _loadServiceOrders() async {
     try {
       QuerySnapshot snapshot = await _firestore
@@ -58,7 +55,6 @@ class _ExportOrderState extends State<ExportOrder> {
     }
   }
 
-  // Function to pick a date
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -85,7 +81,6 @@ class _ExportOrderState extends State<ExportOrder> {
     }
   }
 
-  // Validate service order exists
   Future<bool> _validateServiceOrder(String serviceOrderId) async {
     try {
       DocumentSnapshot doc = await _firestore
@@ -99,9 +94,7 @@ class _ExportOrderState extends State<ExportOrder> {
     }
   }
 
-  // Function to add a new export order to Firestore
   Future<void> _addExportOrder() async {
-    // Validation
     if (_customerStoreNameController.text.trim().isEmpty ||
         _quantityController.text.trim().isEmpty ||
         _selectedExportDate == null ||
@@ -111,7 +104,6 @@ class _ExportOrderState extends State<ExportOrder> {
       return;
     }
 
-    // Validate quantity is a positive number and show UI feedback
     int? quantity = int.tryParse(_quantityController.text.trim());
     if (quantity == null || quantity <= 0) {
       _showSnackBar(
@@ -126,7 +118,6 @@ class _ExportOrderState extends State<ExportOrder> {
     });
 
     try {
-      // Validate service order exists
       bool serviceOrderExists = await _validateServiceOrder(
         _serviceOrderIdController.text.trim(),
       );
@@ -138,7 +129,6 @@ class _ExportOrderState extends State<ExportOrder> {
         return;
       }
 
-      // Create export order
       DocumentReference docRef = await _firestore
           .collection('exportOrders')
           .add({
@@ -150,12 +140,11 @@ class _ExportOrderState extends State<ExportOrder> {
             'quantity': quantity,
             'serviceOrderId': _serviceOrderIdController.text.trim(),
             'createdBy': _createdByController.text.trim(),
-            'createdAt': FieldValue.serverTimestamp(), // Add creation timestamp
+            'createdAt': FieldValue.serverTimestamp(),
           });
 
       print('✅ Đã tạo export order: ${docRef.id}');
 
-      // Clear form fields
       _clearForm();
 
       _showSnackBar('✅ Đơn xuất đã được thêm thành công!', Colors.green);
@@ -170,7 +159,6 @@ class _ExportOrderState extends State<ExportOrder> {
     }
   }
 
-  // Clear form
   void _clearForm() {
     _customerStoreNameController.clear();
     _quantityController.clear();
@@ -182,7 +170,6 @@ class _ExportOrderState extends State<ExportOrder> {
     });
   }
 
-  // Function to show a SnackBar message
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -193,7 +180,6 @@ class _ExportOrderState extends State<ExportOrder> {
     );
   }
 
-  // Show service order selection dialog
   void _showServiceOrderDialog() {
     showDialog(
       context: context,
@@ -241,7 +227,6 @@ class _ExportOrderState extends State<ExportOrder> {
     );
   }
 
-  // Function to show the add export order form
   void _showAddExportOrderForm() {
     showModalBottomSheet(
       context: context,
@@ -270,7 +255,6 @@ class _ExportOrderState extends State<ExportOrder> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Customer Store Name
                     TextField(
                       controller: _customerStoreNameController,
                       decoration: InputDecoration(
@@ -283,11 +267,10 @@ class _ExportOrderState extends State<ExportOrder> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Export Date Picker
                     GestureDetector(
                       onTap: () async {
                         await _selectDate(context);
-                        setModalState(() {}); // Update modal state
+                        setModalState(() {});
                       },
                       child: AbsorbPointer(
                         child: TextField(
@@ -305,7 +288,6 @@ class _ExportOrderState extends State<ExportOrder> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Quantity with validation
                     TextField(
                       controller: _quantityController,
                       keyboardType: TextInputType.number,
@@ -318,17 +300,14 @@ class _ExportOrderState extends State<ExportOrder> {
                         prefixIcon: const Icon(Icons.numbers),
                       ),
                       onChanged: (value) {
-                        // Real-time validation
                         int? qty = int.tryParse(value);
                         if (qty != null && qty <= 0) {
-                          // Show error hint
                           setModalState(() {});
                         }
                       },
                     ),
                     const SizedBox(height: 10),
 
-                    // Note (Optional)
                     TextField(
                       controller: _noteController,
                       maxLines: 3,
@@ -342,7 +321,6 @@ class _ExportOrderState extends State<ExportOrder> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Service Order ID with selection
                     Row(
                       children: [
                         Expanded(
@@ -367,7 +345,6 @@ class _ExportOrderState extends State<ExportOrder> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Created By
                     TextField(
                       controller: _createdByController,
                       decoration: InputDecoration(
@@ -380,7 +357,6 @@ class _ExportOrderState extends State<ExportOrder> {
                     ),
                     const SizedBox(height: 20),
 
-                    // Add Button
                     ElevatedButton(
                       onPressed: _isAddingOrder ? null : _addExportOrder,
                       style: ElevatedButton.styleFrom(
@@ -416,9 +392,6 @@ class _ExportOrderState extends State<ExportOrder> {
     );
   }
 
-  // Export orders cannot be deleted - business rule
-  // Once exported, the record is permanent for audit purposes
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -433,7 +406,7 @@ class _ExportOrderState extends State<ExportOrder> {
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('exportOrders')
-            .orderBy('exportDate', descending: true) // Sort by newest first
+            .orderBy('exportDate', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -470,7 +443,6 @@ class _ExportOrderState extends State<ExportOrder> {
               Map<String, dynamic> data =
                   document.data() as Map<String, dynamic>;
 
-              // Format exportDate
               String exportDate = 'N/A';
               if (data['exportDate'] is Timestamp) {
                 exportDate = DateFormat(
@@ -502,7 +474,6 @@ class _ExportOrderState extends State<ExportOrder> {
                               ),
                             ),
                           ),
-                          // No delete button - export orders are permanent records
                         ],
                       ),
                       const SizedBox(height: 8),

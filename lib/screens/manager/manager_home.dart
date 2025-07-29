@@ -20,7 +20,6 @@ class _ManagerHomeState extends State<ManagerHome> {
   int _selectedIndex = 0;
   late List<Widget> _screens;
 
-  // Dashboard data variables
   String _revenue = 'Đang tải...'; // Changed to loading state
   String _totalOrders = 'Đang tải...'; // Changed to loading state
   String _stockQuantity = 'Đang tải...'; // Changed default value

@@ -1,11 +1,9 @@
 // lib/screens/order_entry_screen.dart
 import 'package:flutter/material.dart';
-// For date formatting
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:sonxemaycantho/models/service_order.dart'; // Import ServiceOrder and ServiceOrderItem models
+import 'package:sonxemaycantho/models/service_order.dart';
 
 class OrderEntry extends StatefulWidget {
-  // Renamed from OrderEntry to OrderEntry for consistency
   const OrderEntry({super.key});
 
   @override
@@ -13,20 +11,16 @@ class OrderEntry extends StatefulWidget {
 }
 
 class _OrderEntryState extends State<OrderEntry> {
-  final _formKey = GlobalKey<FormState>(); // Key for form validation
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _storeNameController = TextEditingController();
   final TextEditingController _generalNoteController = TextEditingController();
 
-  // Firestore instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // List to hold ServiceOrderItems for the current order being entered
   List<ServiceOrderItem> _orderItems = [];
 
-  // State to manage loading indicator
   bool _isLoading = false;
 
-  // List of available car models for the dropdown
   final List<String> _carModels = [
     'Vision',
     'Future 125',
@@ -38,31 +32,11 @@ class _OrderEntryState extends State<OrderEntry> {
     'SH Mode',
   ];
 
-  // List of available colors for the dropdown
-  // final List<String> _carColors = [
-  //   'Đỏ',
-  //   'Xanh',
-  //   'Trắng',
-  //   'Đen',
-  //   'Bạc',
-  //   'Vàng',
-  //   'Cam',
-  //   'Hồng',
-  //   'Nâu',
-  //   'Xám Titan',
-  //   'Khác',
-  // ];
-
   @override
   void initState() {
     super.initState();
-    // Initialize with one empty item for convenience, quantity now defaults to 0, and default color
     _orderItems.add(
-      ServiceOrderItem(
-        carModel: _carModels.first,
-        quantity: 0,
-        color: '', // Default color
-      ),
+      ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
     );
   }
 
@@ -73,84 +47,66 @@ class _OrderEntryState extends State<OrderEntry> {
     super.dispose();
   }
 
-  // Function to add a new ServiceOrderItem row to the form
   void _addOrderItem() {
     setState(() {
       _orderItems.add(
-        ServiceOrderItem(
-          carModel: _carModels.first,
-          quantity: 0,
-          color: '', // Default color for new item
-        ),
+        ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
       );
     });
   }
 
-  // Function to remove a ServiceOrderItem row from the form
   void _removeOrderItem(int index) {
     setState(() {
       _orderItems.removeAt(index);
     });
   }
 
-  // Function to handle form submission
   Future<void> _submitOrder() async {
     if (!_formKey.currentState!.validate()) {
-      return; // Stop if form is not valid
+      return;
     }
 
-    _formKey.currentState!.save(); // Save all form fields
+    _formKey.currentState!.save();
 
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
     try {
-      // 1. Create the ServiceOrder object
       final newOrder = ServiceOrder(
         storeName: _storeNameController.text.trim(),
         createDate: DateTime.now(),
         note: _generalNoteController.text.trim().isEmpty
             ? null
             : _generalNoteController.text.trim(),
-        status: 'Chưa kiểm', // Default status for new orders
+        status: 'Chưa kiểm',
       );
 
-      // 2. Add the ServiceOrder to Firestore
-      // Using .add() for auto-generated ID
       DocumentReference orderRef = await _firestore
           .collection('serviceOrders')
           .add(newOrder.toMap());
-      newOrder.id = orderRef.id; // Get the auto-generated ID
+      newOrder.id = orderRef.id;
 
-      // 3. Add each ServiceOrderItem to Firestore, linking to the parent order
       for (var item in _orderItems) {
-        item.serviceOrderId = newOrder.id; // Link item to the new order's ID
+        item.serviceOrderId = newOrder.id;
         await _firestore.collection('serviceOrderItems').add(item.toMap());
       }
 
-      // Show success confirmation dialog
       _showConfirmationDialog(
         title: 'Tạo đơn hàng thành công!',
         content: 'Đơn hàng của bạn đã được ghi nhận vào hệ thống.',
         isSuccess: true,
       );
 
-      // Optionally clear the form or navigate away after successful submission
       _storeNameController.clear();
       _generalNoteController.clear();
       setState(() {
         _orderItems = [
-          ServiceOrderItem(
-            carModel: _carModels.first,
-            quantity: 0,
-            color: '', // Reset items, quantity to 0, default color
-          ),
+          ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
         ];
       });
     } catch (e) {
       print('Lỗi khi tạo đơn hàng: $e');
-      // Show error dialog
       _showConfirmationDialog(
         title: 'Lỗi!',
         content: 'Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại. Lỗi: $e',
@@ -158,7 +114,7 @@ class _OrderEntryState extends State<OrderEntry> {
       );
     } finally {
       setState(() {
-        _isLoading = false; // Hide loading indicator
+        _isLoading = false;
       });
     }
   }
@@ -178,7 +134,7 @@ class _OrderEntryState extends State<OrderEntry> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -207,7 +163,6 @@ class _OrderEntryState extends State<OrderEntry> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // General Order Information
                     Text(
                       'Thông tin đơn hàng',
                       style: Theme.of(context).textTheme.headlineSmall
@@ -247,8 +202,6 @@ class _OrderEntryState extends State<OrderEntry> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    // List of Car Items
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -275,7 +228,6 @@ class _OrderEntryState extends State<OrderEntry> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Use Column to dynamically add/remove widgets
                     Column(
                       children: _orderItems.asMap().entries.map((entry) {
                         int index = entry.key;
@@ -306,8 +258,7 @@ class _OrderEntryState extends State<OrderEntry> {
                                               color: Colors.blueGrey[700],
                                             ),
                                       ),
-                                      if (_orderItems.length >
-                                          1) // Allow removing if more than one item
+                                      if (_orderItems.length > 1)
                                         IconButton(
                                           icon: const Icon(
                                             Icons.remove_circle,
@@ -348,8 +299,7 @@ class _OrderEntryState extends State<OrderEntry> {
                                   ),
                                   const SizedBox(height: 16),
                                   TextFormField(
-                                    initialValue:
-                                        item.color, // Display current color
+                                    initialValue: item.color,
                                     decoration: InputDecoration(
                                       labelText: 'Màu sắc',
                                       border: OutlineInputBorder(
@@ -364,8 +314,7 @@ class _OrderEntryState extends State<OrderEntry> {
                                       return null;
                                     },
                                     onSaved: (value) {
-                                      item.color =
-                                          value!; // Save the entered color
+                                      item.color = value!;
                                     },
                                   ),
                                   const SizedBox(height: 16),
@@ -418,7 +367,6 @@ class _OrderEntryState extends State<OrderEntry> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Submit Button
                     Center(
                       child: ElevatedButton(
                         onPressed: _submitOrder,

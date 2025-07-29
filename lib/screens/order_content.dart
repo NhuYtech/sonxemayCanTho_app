@@ -11,7 +11,6 @@ class OrderContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tiêu đề "Chức năng"
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: const Text(
@@ -25,9 +24,7 @@ class OrderContent extends StatelessWidget {
             ),
           ),
 
-          // Danh sách chức năng
           Expanded(
-            // Added Expanded to ListView to make it take available space
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
@@ -35,7 +32,7 @@ class OrderContent extends StatelessWidget {
                   context,
                   icon: Icons.download,
                   text: 'Đơn nhập',
-                  color: Colors.lightBlue.shade50, // Keep tile background color
+                  color: Colors.lightBlue.shade50,
                   onTap: () {
                     Navigator.push(
                       context,
@@ -50,14 +47,12 @@ class OrderContent extends StatelessWidget {
                   context,
                   icon: Icons.upload,
                   text: 'Đơn xuất',
-                  color: Colors.green.shade50, // Keep tile background color
+                  color: Colors.green.shade50,
                   onTap: () {
-                    // Điều hướng đến màn hình ExportOrder
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            const ExportOrder(), // Điều hướng đến ExportOrder
+                        builder: (context) => const ExportOrder(),
                       ),
                     );
                     print('Đơn xuất tapped!');
@@ -67,7 +62,7 @@ class OrderContent extends StatelessWidget {
                   context,
                   icon: Icons.inventory_2,
                   text: 'Đơn tồn kho',
-                  color: Colors.orange.shade50, // Keep tile background color
+                  color: Colors.orange.shade50,
                   onTap: () {
                     // TODO: Navigator.push to StockOrder
                     print('Đơn tồn kho tapped!');
@@ -97,8 +92,7 @@ class OrderContent extends StatelessWidget {
     required IconData icon,
     required String text,
     required VoidCallback onTap,
-    Color? color, // Still keep for tile background color
-    // Removed Color? iconColor, // <--- REMOVED THIS PARAMETER
+    Color? color,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -127,12 +121,7 @@ class OrderContent extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Icon color set to a fixed Colors.black87
-                Icon(
-                  icon,
-                  size: 30,
-                  color: Colors.black87,
-                ), // <--- ICON COLOR CHANGE HERE
+                Icon(icon, size: 30, color: Colors.black87),
                 const SizedBox(width: 20),
                 Expanded(
                   child: Text(

@@ -40,7 +40,6 @@ class ManagerProfileScreen extends StatelessWidget {
               ),
             ),
 
-            // Danh sách chức năng
             Expanded(
               child: Container(
                 color: Colors.grey.shade200,
@@ -104,10 +103,8 @@ class ManagerProfileScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () async {
-              // Gọi Firebase logout
               await FirebaseAuth.instance.signOut();
 
-              // Đóng dialog và quay về RoleSelection
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const RoleSelection()),
                 (route) => false,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sonxemaycantho/widgets/navigation_bar.dart';
 import '../profile.dart';
 import 'create_repair_order.dart';
 
@@ -21,6 +22,7 @@ class _StaffHomeState extends State<StaffHome> {
     _screens = [
       _buildDashboard(),
       const CreateRepairOrderScreen(),
+      _buildCustomerService(), // Thêm màn hình CSKH
       Profile(name: widget.name, role: 'staff'),
     ];
   }
@@ -30,20 +32,13 @@ class _StaffHomeState extends State<StaffHome> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.red,
-        unselectedItemColor: Colors.black,
-        onTap: (index) {
+      bottomNavigationBar: BottomNavBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: (index) {
           setState(() {
             _selectedIndex = index;
           });
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Tạo đơn'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Cá nhân'),
-        ],
       ),
     );
   }
@@ -98,6 +93,65 @@ class _StaffHomeState extends State<StaffHome> {
                   Colors.pink,
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomerService() {
+    return SafeArea(
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Color.fromARGB(255, 222, 96, 85),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  backgroundImage: AssetImage('assets/logo/logo1.png'),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Chăm sóc khách hàng',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ),
+                const Icon(Icons.chat, color: Colors.yellow),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Nội dung CSKH
+          const Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Chăm sóc khách hàng',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Tính năng đang được phát triển',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
