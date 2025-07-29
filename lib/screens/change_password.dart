@@ -1,10 +1,10 @@
 // lib/screens/change_password_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sonxemaycantho/services/auth.dart'; // Ensure this import is correct
-import 'package:firebase_auth/firebase_auth.dart'; // Import if using Firebase Auth exceptions
+import 'package:sonxemaycantho/services/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  final String role; // Thêm tham số role
+  final String role;
 
   const ChangePasswordScreen({super.key, required this.role});
 
@@ -31,7 +31,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   Future<void> _changePassword() async {
     if (_formKey.currentState!.validate()) {
-      // Check if new password and confirm new password match
       if (_newPasswordController.text != _confirmNewPasswordController.text) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -61,10 +60,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.of(context).pop(); // Go back after success
+          Navigator.of(context).pop();
         }
       } on FirebaseAuthException catch (e) {
-        // Catch Firebase specific exceptions
         if (mounted) {
           String errorMessage;
           if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
@@ -75,7 +73,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           } else if (e.code == 'weak-password') {
             errorMessage = 'Mật khẩu quá yếu. Vui lòng chọn mật khẩu mạnh hơn.';
           } else if (e.code == 'user-not-found') {
-            // Should not happen if user is logged in
             errorMessage = 'Không tìm thấy người dùng. Vui lòng đăng nhập lại.';
           } else {
             errorMessage = 'Lỗi khi đổi mật khẩu: ${e.message}';
@@ -85,13 +82,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           );
         }
       } catch (e) {
-        // Catch any other general exceptions
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
                 'Đã xảy ra lỗi: ${e.toString().split(':').last.trim()}',
-              ), // Generic error message
+              ),
               backgroundColor: Colors.red,
             ),
           );

@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:sonxemaycantho/screens/customer_support.dart'; // Đảm bảo import đúng đường dẫn cho CustomerSupport
+import 'package:sonxemaycantho/screens/customer_service.dart';
 
 class ChatList extends StatefulWidget {
-  final String managerName; // Tên của quản lý hiện tại
+  final String managerName;
   const ChatList({super.key, required this.managerName});
 
   @override
@@ -25,13 +25,11 @@ class _ChatListState extends State<ChatList> {
     _loadCurrentUser();
   }
 
-  // Tải thông tin người dùng hiện tại
   void _loadCurrentUser() {
     _currentUser = _auth.currentUser;
     if (_currentUser == null) {
       debugPrint('>>> ChatList: No user signed in.');
-      // Xử lý trường hợp không có người dùng đăng nhập, có thể chuyển hướng
-      // hoặc hiển thị thông báo lỗi.
+
       setState(() {
         _isLoading = false;
       });
@@ -43,10 +41,9 @@ class _ChatListState extends State<ChatList> {
     });
   }
 
-  // Hàm để lấy tên người dùng (khách hàng hoặc nhân viên) từ UID
   Future<String> _getUserName(String uid) async {
     if (uid == _currentUser?.uid) {
-      return widget.managerName; // Nếu là chính quản lý, trả về tên quản lý
+      return widget.managerName;
     }
     try {
       DocumentSnapshot userDoc = await _firestore
@@ -56,7 +53,7 @@ class _ChatListState extends State<ChatList> {
       if (userDoc.exists) {
         return userDoc['name'] ?? 'Người dùng ẩn danh';
       }
-      // Fallback nếu không tìm thấy trong 'users', có thể thử 'customers'
+
       DocumentSnapshot customerDoc = await _firestore
           .collection('customers')
           .doc(uid)
@@ -76,9 +73,7 @@ class _ChatListState extends State<ChatList> {
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(
-            Color(0xFFC1473B),
-          ), // Màu loading cũng theo theme
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC1473B)),
         ),
       );
     }
@@ -87,37 +82,31 @@ class _ChatListState extends State<ChatList> {
       return const Center(
         child: Text(
           'Vui lòng đăng nhập để xem danh sách chat.',
-          style: TextStyle(color: Color(0xFFC1473B)), // Màu chữ cũng theo theme
+          style: TextStyle(color: Color(0xFFC1473B)),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Danh sách cuộc trò chuyện',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFFC1473B), // Đã thay đổi màu nền ở đây
+        title: const Text('Tin nhắn', style: TextStyle(color: Colors.blue)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: false,
+        automaticallyImplyLeading: false,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // Lấy tất cả các cuộc trò chuyện mà người dùng hiện tại là một participant
         stream: _firestore
             .collection('chats')
             .where('participants', arrayContains: _currentUser!.uid)
-            .orderBy(
-              'lastMessageTimestamp',
-              descending: true,
-            ) // Sắp xếp theo tin nhắn cuối cùng
+            .orderBy('lastMessageTimestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Color(0xFFC1473B),
-                ), // Màu loading cũng theo theme
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC1473B)),
               ),
             );
           }
@@ -153,13 +142,12 @@ class _ChatListState extends State<ChatList> {
               List<String> participants = List<String>.from(
                 chatData['participants'],
               );
-              // Tìm ID của người tham gia khác (khách hàng)
+
               String otherParticipantId = participants.firstWhere(
                 (uid) => uid != _currentUser!.uid,
-                orElse: () => _currentUser!.uid, // Fallback nếu chỉ có một mình
+                orElse: () => _currentUser!.uid,
               );
 
-              // Lấy tên của người tham gia khác
               return FutureBuilder<String>(
                 future: _getUserName(otherParticipantId),
                 builder: (context, nameSnapshot) {
@@ -171,7 +159,6 @@ class _ChatListState extends State<ChatList> {
                     chatPartnerName = 'Lỗi tải tên';
                   }
 
-                  // Định dạng thời gian tin nhắn cuối cùng
                   String lastMessageTime = '';
                   if (chatData['lastMessageTimestamp'] is Timestamp) {
                     Timestamp timestamp = chatData['lastMessageTimestamp'];
@@ -199,12 +186,10 @@ class _ChatListState extends State<ChatList> {
                         radius: 28,
                         backgroundColor: const Color(
                           0xFFC1473B,
-                        ).withOpacity(0.1), // Màu avatar cũng theo theme
+                        ).withOpacity(0.1),
                         child: Icon(
                           Icons.person,
-                          color: const Color(
-                            0xFFC1473B,
-                          ), // Màu icon avatar cũng theo theme
+                          color: const Color(0xFFC1473B),
                           size: 30,
                         ),
                       ),
@@ -226,15 +211,13 @@ class _ChatListState extends State<ChatList> {
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                       onTap: () {
-                        // Chuyển đến màn hình chat chi tiết
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => CustomerSupport(
-                              name: chatPartnerName, // Tên khách hàng
-                              chatId: chatDoc.id, // ID cuộc trò chuyện
-                              customerId:
-                                  otherParticipantId, // ID của khách hàng
+                              name: chatPartnerName,
+                              chatId: chatDoc.id,
+                              customerId: otherParticipantId,
                             ),
                           ),
                         );

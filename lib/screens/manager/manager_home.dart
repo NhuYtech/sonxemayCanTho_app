@@ -3,13 +3,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:sonxemaycantho/screens/chat.dart';
 import 'package:sonxemaycantho/widgets/navigation_bar.dart';
-import '../profile.dart'; // CommonProfile
-import '../order.dart'; // ManagerOrder (giả định)
-import 'customer_support/chat_list.dart'; // Đã thay đổi import này để trỏ đến ChatListScreen
-import '../../widgets/header.dart'; // Header
-import '../../widgets/navigation_bar.dart'; // Import BottomNavBar mới
-import 'dashboard.dart'; // ManagerDashboardContent
-import '../../services/firestore.dart'; // Import FirestoreService với đúng tên file
+import '../profile.dart';
+import '../order.dart';
+import '../../widgets/header.dart';
+import 'dashboard.dart';
 
 class ManagerHome extends StatefulWidget {
   final String name;
@@ -31,11 +28,7 @@ class _ManagerHomeState extends State<ManagerHome> {
   String _customerCount = 'Đang tải...'; // Changed to loading state
   String _staffCount = 'Đang tải...'; // Changed to loading state
 
-  // Loading state
   bool _isLoading = true;
-
-  // FirestoreService instance
-  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   void initState() {
@@ -65,19 +58,17 @@ class _ManagerHomeState extends State<ManagerHome> {
     try {
       print('🚀 Bắt đầu fetch dashboard data...');
 
-      // Fetch stock/import orders count from Firestore
       print('📦 Bắt đầu fetch stock quantity...');
       await _fetchStockQuantity();
       print('📦 Hoàn thành fetch stock quantity');
 
-      // Fetch other dashboard data
       print('📊 Bắt đầu fetch other data...');
       await _fetchOtherData();
       print('📊 Hoàn thành fetch other data');
 
       setState(() {
         _isLoading = false;
-        _initializeScreens(); // Reinitialize screens with updated data
+        _initializeScreens();
       });
 
       print('✅ Hoàn thành fetch dashboard data');
@@ -207,8 +198,6 @@ class _ManagerHomeState extends State<ManagerHome> {
   Future<void> _fetchOtherData() async {
     try {
       print('📊 Đang fetch dữ liệu khác...');
-
-      // Fetch total export orders from 'exportOrders' collection
       try {
         QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
             .collection('exportOrders')
@@ -225,7 +214,6 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
 
-      // Fetch revenue from 'exportOrders'
       try {
         QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
             .collection('exportOrders')
@@ -233,29 +221,15 @@ class _ManagerHomeState extends State<ManagerHome> {
         double totalRevenue = 0;
         for (var doc in exportOrdersSnapshot.docs) {
           var data = doc.data() as Map<String, dynamic>;
-          // Giả định mỗi đơn xuất có 'quantity' và 'pricePerItem'
-          // Hoặc bạn có thể có một trường 'totalAmount' trực tiếp trong exportOrders
+
           int quantity = (data['quantity'] as num?)?.toInt() ?? 0;
-          // Để tính doanh thu thực tế, bạn cần giá của sản phẩm.
-          // Ví dụ: lấy giá từ serviceOrder hoặc có một trường giá trực tiếp.
-          // Hiện tại, giả định một giá cố định cho mỗi đơn vị nếu không có trường giá.
-          // Hoặc nếu có trường 'totalAmount' trong exportOrders, hãy dùng nó.
-          double itemPrice =
-              100000; // GIÁ TRỊ GIẢ ĐỊNH: Cần thay bằng giá thực tế từ Firebase
+          double itemPrice = 100000;
 
-          // Nếu có trường 'totalAmount' trong exportOrders, hãy sử dụng nó
-          // Ví dụ: double orderTotal = (data['totalAmount'] as num?)?.toDouble() ?? 0;
-          // totalRevenue += orderTotal;
-
-          totalRevenue += (quantity * itemPrice); // Tính toán dựa trên giả định
+          totalRevenue += (quantity * itemPrice);
         }
 
         setState(() {
-          // Định dạng số tiền
-          final formatter = NumberFormat(
-            '#,##0',
-            'vi_VN',
-          ); // Định dạng tiền Việt Nam
+          final formatter = NumberFormat('#,##0', 'vi_VN');
           _revenue = '${formatter.format(totalRevenue)} VND';
           print('🎯 Cập nhật UI: Doanh thu: $_revenue');
         });
@@ -266,20 +240,15 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
 
-      // Fetch damaged items count
       try {
         QuerySnapshot damagedItemsSnapshot = await FirebaseFirestore.instance
-            .collection('damagedItems') // Thử collection 'damagedItems'
+            .collection('damagedItems')
             .get();
         int count = damagedItemsSnapshot.docs.length;
         if (count == 0) {
-          // Fallback: Check 'products' or 'inventory' collection for 'damaged' status
           QuerySnapshot productsSnapshot = await FirebaseFirestore.instance
-              .collection('products') // Hoặc 'inventory'
-              .where(
-                'status',
-                isEqualTo: 'damaged',
-              ) // Giả định có trường 'status'
+              .collection('products')
+              .where('status', isEqualTo: 'damaged')
               .get();
           count = productsSnapshot.docs.length;
         }
@@ -294,7 +263,6 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
 
-      // Fetch customer count
       try {
         QuerySnapshot customersSnapshot = await FirebaseFirestore.instance
             .collection('customers')
@@ -306,7 +274,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       } catch (e) {
         print('❌ Lỗi khi lấy customers: $e');
-        // Try with 'users' collection as fallback
+
         try {
           QuerySnapshot usersSnapshot = await FirebaseFirestore.instance
               .collection('users')
@@ -322,15 +290,12 @@ class _ManagerHomeState extends State<ManagerHome> {
         }
       }
 
-      // Fetch staff count
       try {
         QuerySnapshot staffSnapshot = await FirebaseFirestore.instance
-            .collection(
-              'users',
-            ) // Giả định nhân viên nằm trong collection 'users'
-            .where('role', isEqualTo: 'staff') // Lọc theo vai trò 'staff'
+            .collection('users')
+            .where('role', isEqualTo: 'staff')
             .get();
-        // Bạn có thể thêm các vai trò khác nếu có, ví dụ: .where(FieldPath.documentId, whereIn: ['staff', 'manager'])
+
         setState(() {
           _staffCount = '${staffSnapshot.docs.length} nhân viên';
           print('🎯 Cập nhật UI: Danh sách nhân viên: $_staffCount');
@@ -345,11 +310,9 @@ class _ManagerHomeState extends State<ManagerHome> {
       print('✅ Hoàn thành fetch dữ liệu khác');
     } catch (e) {
       print('💥 Error fetching other data: $e');
-      // Keep default values or set to error
     }
   }
 
-  // Method to refresh data manually
   void _refreshData() {
     setState(() {
       _isLoading = true;
@@ -376,7 +339,6 @@ class _ManagerHomeState extends State<ManagerHome> {
         child: _screens[_selectedIndex],
       ),
       bottomNavigationBar: BottomNavBar(
-        // Sử dụng BottomNavBar mới
         selectedIndex: _selectedIndex,
         onItemTapped: (index) {
           setState(() {
