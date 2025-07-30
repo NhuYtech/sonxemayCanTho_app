@@ -6,7 +6,7 @@ import 'package:sonxemaycantho/widgets/navigation_bar.dart';
 import '../profile.dart';
 import '../order.dart';
 import '../../widgets/header.dart';
-import 'dashboard.dart';
+import '../dashboard.dart';
 
 class ManagerHome extends StatefulWidget {
   final String name;
@@ -38,7 +38,7 @@ class _ManagerHomeState extends State<ManagerHome> {
 
   void _initializeScreens() {
     _screens = [
-      ManagerDashboardContent(
+      Dashboard(
         revenue: _revenue,
         totalOrders: _totalOrders,
         stockQuantity: _stockQuantity,

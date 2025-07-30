@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sonxemaycantho/screens/view_profile.dart';
-import 'package:sonxemaycantho/services/auth.dart';
+import 'package:sonxemaycantho/services/auth_service.dart';
 import 'package:sonxemaycantho/screens/role.dart';
 import 'package:sonxemaycantho/screens/change_password.dart';
 

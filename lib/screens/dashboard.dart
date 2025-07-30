@@ -1,7 +1,7 @@
 // lib/screens/dashboard.dart
 import 'package:flutter/material.dart';
 
-class ManagerDashboardContent extends StatelessWidget {
+class Dashboard extends StatelessWidget {
   final String revenue;
   final String totalOrders;
   final String stockQuantity; // This will now receive the count from Firestore
@@ -10,7 +10,7 @@ class ManagerDashboardContent extends StatelessWidget {
   final String staffCount;
   final bool isLoading;
 
-  const ManagerDashboardContent({
+  const Dashboard({
     super.key,
     required this.revenue,
     required this.totalOrders,
@@ -37,7 +37,7 @@ class ManagerDashboardContent extends StatelessWidget {
           stockQuantity,
           Icons.warehouse,
           const Color(0xFFFFFDE7),
-          isHighlighted: true,
+          // isHighlighted: true,
         ),
         _buildStatCard(
           'Tổng đơn xuất:',
