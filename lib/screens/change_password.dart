@@ -1,13 +1,12 @@
 // lib/screens/change_password_screen.dart
 import 'package:flutter/material.dart';
-import 'package:sonxemaycantho/screens/usermapping.dart'; // Đảm bảo file này tồn tại
 import 'package:sonxemaycantho/services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Vẫn cần để bắt FirebaseAuthException
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
-  final String role; // Stores the role parameter
+  final String role;
 
-  const ChangePasswordScreen({super.key, required this.role}); // Constructor
+  const ChangePasswordScreen({super.key, required this.role});
 
   @override
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
