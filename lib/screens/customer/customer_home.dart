@@ -1,9 +1,10 @@
 // lib/screens/customer/customer_home.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sonxemaycantho/screens/customer/customer_order.dart';
 import '../../widgets/header.dart';
 import '../profile/profile.dart';
-import 'customer_chat.dart'; // Import màn hình chat của khách hàng
+import 'customer_chat.dart';
 
 class CustomerHome extends StatefulWidget {
   final String name;
@@ -27,7 +28,8 @@ class _CustomerHomeState extends State<CustomerHome> {
     // Khởi tạo các màn hình
     _pages = [
       _buildHomeTab(),
-      const Center(child: Text('📦 Danh sách đơn hàng')),
+      // Thay thế Center bằng màn hình CustomerOrder
+      const CustomerOrder(),
       // Thay thế màn hình Center bằng màn hình chat của khách hàng
       CustomerChatScreen(customerName: widget.name),
       Profile(name: widget.name, role: 'customer'),
@@ -89,7 +91,7 @@ class _CustomerHomeState extends State<CustomerHome> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       children: [
         _buildStatCard(
-          'Tổng đơn hàng của bạn:',
+          'Tổng đơn hàng:',
           _customerOrdersCount,
           Icons.shopping_bag,
           const Color(0xFFE3F2FD),

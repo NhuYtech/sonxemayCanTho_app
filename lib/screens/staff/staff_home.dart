@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:intl/intl.dart'; // Only if you use it for number formatting
 import 'package:sonxemaycantho/screens/order/order_content.dart';
-import 'package:sonxemaycantho/widgets/navigation_bar.dart';
 import '../profile/profile.dart';
-import '../../widgets/header.dart';
 
 class StaffHome extends StatefulWidget {
   final String name;
@@ -18,20 +15,16 @@ class _StaffHomeState extends State<StaffHome> {
   int _selectedIndex = 0;
   late List<Widget> _screens;
 
-  // Data for staff dashboard - Renamed for clarity based on desired data
-  // Ensure these are ALWAYS initialized with a non-null String
   String _totalImportOrders = 'Đang tải...';
   String _totalExportOrders = 'Đang tải...';
-  String _totalStockOrders = 'Đang tải...'; // Renamed to reflect the change
+  String _totalStockOrders = 'Đang tải...';
 
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Initialize screens immediately with loading states
     _initializeScreens();
-    // Then start fetching data
     _fetchDashboardData();
   }
 
@@ -40,40 +33,33 @@ class _StaffHomeState extends State<StaffHome> {
       _StaffDashboardContent(
         totalImportOrders: _totalImportOrders,
         totalExportOrders: _totalExportOrders,
-        totalStockOrders: _totalStockOrders, // Updated parameter
+        totalStockOrders: _totalStockOrders,
         isLoading: _isLoading,
       ),
       const OrderContent(),
-      _buildCustomerService(),
       Profile(name: widget.name, role: 'staff'),
     ];
   }
 
-  // Main function to fetch all dashboard data for staff
   void _fetchDashboardData() async {
     print('🚀 Bắt đầu fetch staff dashboard data...');
     setState(() {
-      _isLoading = true; // Set loading to true
-      _totalImportOrders = 'Đang tải...'; // Reset values to loading state
+      _isLoading = true;
+      _totalImportOrders = 'Đang tải...';
       _totalExportOrders = 'Đang tải...';
-      _totalStockOrders = 'Đang tải...'; // Reset value
-      _initializeScreens(); // Update screens to show loading states
+      _totalStockOrders = 'Đang tải...';
+      _initializeScreens();
     });
 
     try {
-      // Fetch Total Import Orders
       await _fetchTotalImportOrders();
-
-      // Fetch Total Export Orders
       await _fetchTotalExportOrders();
-
-      // Fetch Total Stock Orders
-      await _fetchTotalStockOrders(); // Updated function call
+      await _fetchTotalStockOrders();
 
       if (mounted) {
         setState(() {
-          _isLoading = false; // Data loaded
-          _initializeScreens(); // Re-initialize screens with new data
+          _isLoading = false;
+          _initializeScreens();
         });
         print('✅ Hoàn thành fetch staff dashboard data');
       }
@@ -83,22 +69,21 @@ class _StaffHomeState extends State<StaffHome> {
         setState(() {
           _totalImportOrders = 'Lỗi tải dữ liệu';
           _totalExportOrders = 'Lỗi tải dữ liệu';
-          _totalStockOrders = 'Lỗi tải dữ liệu'; // Updated value
+          _totalStockOrders = 'Lỗi tải dữ liệu';
           _isLoading = false;
-          _initializeScreens(); // Re-initialize screens to show error states
+          _initializeScreens();
         });
       }
     }
   }
 
-  // New function to fetch total import orders, similar to manager's stock quantity
   Future<void> _fetchTotalImportOrders() async {
     try {
       print('🔍 Bắt đầu fetch dữ liệu tổng đơn nhập...');
       List<String> possibleCollections = [
-        'serviceOrders', // Potential existing repair/service orders
-        'orders', // General orders
-        'import_orders', // Specific import order collection
+        'serviceOrders',
+        'orders',
+        'import_orders',
         'importOrders',
         'phieu_nhap',
         'don_nhap',
@@ -123,9 +108,8 @@ class _StaffHomeState extends State<StaffHome> {
               totalImports = querySnapshot.docs.length;
               foundCollection = true;
               print('✅ Tìm thấy $totalImports đơn nhập trong $collectionName');
-              break; // Found a relevant collection, no need to check others
+              break;
             } else {
-              // Check if documents within the collection have a 'type' field indicating import
               for (var doc in querySnapshot.docs) {
                 var data = doc.data() as Map<String, dynamic>;
                 if (data.containsKey('type') &&
@@ -138,11 +122,10 @@ class _StaffHomeState extends State<StaffHome> {
                   print(
                     '✅ Tìm thấy $totalImports đơn nhập trong $collectionName (qua type field)',
                   );
-                  break; // Found a relevant collection, no need to check others
+                  break;
                 }
               }
-              if (foundCollection)
-                break; // If found within this collection, stop
+              if (foundCollection) break;
             }
           }
         } catch (e) {
@@ -166,18 +149,17 @@ class _StaffHomeState extends State<StaffHome> {
     }
   }
 
-  // New function to fetch total export orders
   Future<void> _fetchTotalExportOrders() async {
     try {
       print('🔍 Bắt đầu fetch dữ liệu tổng đơn xuất...');
       int totalExports = 0;
       List<String> possibleCollections = [
-        'export_orders', // Specific export order collection
+        'export_orders',
         'exportOrders',
         'phieu_xuat',
         'don_xuat',
         'stock_exports',
-        'sale_orders', // Sales orders often imply exports
+        'sale_orders',
         'sales',
         'exports',
       ];
@@ -241,20 +223,17 @@ class _StaffHomeState extends State<StaffHome> {
     }
   }
 
-  // CẬP NHẬT: Hàm mới để tính tổng số đơn tồn kho
   Future<void> _fetchTotalStockOrders() async {
     print('🔍 Bắt đầu fetch tổng đơn tồn kho...');
     try {
       int totalStockOrders = 0;
       final stockStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
 
-      // Lấy các đơn hàng có trạng thái tồn kho
       final QuerySnapshot stockOrdersSnapshot = await FirebaseFirestore.instance
           .collection('serviceOrders')
           .where('status', whereIn: stockStatuses)
           .get();
 
-      // Đếm số lượng đơn hàng
       totalStockOrders = stockOrdersSnapshot.docs.length;
 
       if (stockOrdersSnapshot.docs.isEmpty) {
@@ -265,7 +244,6 @@ class _StaffHomeState extends State<StaffHome> {
 
       if (mounted) {
         setState(() {
-          // Fix: Ensure a non-null string is always assigned.
           _totalStockOrders = '$totalStockOrders đơn';
         });
         print('🎯 Cập nhật UI: Tổng đơn tồn kho: $_totalStockOrders');
@@ -285,80 +263,153 @@ class _StaffHomeState extends State<StaffHome> {
       _isLoading = true;
       _totalImportOrders = 'Đang tải...';
       _totalExportOrders = 'Đang tải...';
-      _totalStockOrders = 'Đang tải...'; // Updated variable
-      _initializeScreens(); // Re-initialize screens to show loading state on refresh
+      _totalStockOrders = 'Đang tải...';
+      _initializeScreens();
     });
     _fetchDashboardData();
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFC1473B),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const CircleAvatar(
+                  backgroundImage: AssetImage('assets/logo/logo1.png'),
+                  radius: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Xin chào,\n${widget.name}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.notifications, color: Colors.yellow, size: 28),
+                const SizedBox(width: 8),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Tìm kiếm...',
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () {
+                    print('Clear search tapped!');
+                  },
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                ),
+              ),
+              onChanged: (value) {
+                print('Search query: $value');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    return BottomNavigationBar(
+      currentIndex: _selectedIndex,
+      selectedItemColor: Colors.red,
+      unselectedItemColor: Colors.black,
+      onTap: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
+      },
+      type: BottomNavigationBarType.fixed,
+      items: [
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.home),
+          label: _selectedIndex == 0 ? 'Trang chủ' : '',
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.list),
+          label: _selectedIndex == 1 ? 'Đơn hàng' : '',
+        ),
+        BottomNavigationBarItem(
+          icon: const Icon(Icons.person),
+          label: _selectedIndex == 2 ? 'Cá nhân' : '',
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: Header(name: widget.name),
+      appBar: AppBar(
+        toolbarHeight: 160.0,
+        // Đặt automaticallyImplyLeading thành false để loại bỏ mũi tên quay lại.
+        automaticallyImplyLeading: false,
+        flexibleSpace: _buildHeader(context),
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           _refreshData();
         },
         child: _screens[_selectedIndex],
       ),
-      bottomNavigationBar: BottomNavBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-      ),
-    );
-  }
-
-  Widget _buildCustomerService() {
-    return SafeArea(
-      child: Column(
-        children: [
-          const SizedBox(height: 16),
-          const Expanded(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'Chăm sóc khách hàng',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Tính năng đang được phát triển',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      bottomNavigationBar: _buildBottomNavBar(),
     );
   }
 }
 
-// --- _StaffDashboardContent Widget (Updated parameters and titles) ---
+// Các class còn lại vẫn giữ nguyên
+// --- _StaffDashboardContent Widget ---
 class _StaffDashboardContent extends StatelessWidget {
-  // Ensure these parameters are consistently named and non-null
   final String totalImportOrders;
   final String totalExportOrders;
-  final String totalStockOrders; // Updated parameter
-
+  final String totalStockOrders;
   final bool isLoading;
 
   const _StaffDashboardContent({
     required this.totalImportOrders,
     required this.totalExportOrders,
-    required this.totalStockOrders, // Updated parameter
-    this.isLoading =
-        false, // Default to false if not provided, but it's usually provided by parent
+    required this.totalStockOrders,
+    this.isLoading = false,
   });
 
   @override
@@ -382,7 +433,7 @@ class _StaffDashboardContent extends StatelessWidget {
         ),
         _buildStatCard(
           'Tổng tồn kho:',
-          totalStockOrders, // Updated variable
+          totalStockOrders,
           Icons.inventory_2,
           const Color(0xFFFFEBEE),
           showLoading: isLoading && totalStockOrders == 'Đang tải...',
