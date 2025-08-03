@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 // import 'package:sonxemaycantho/screens/chat.dart';
 import 'package:sonxemaycantho/screens/chat_list.dart';
 import 'package:sonxemaycantho/widgets/navigation_bar.dart';
-import '../profile.dart';
-import '../order.dart';
+import '../profile/profile.dart';
+import '../order/order.dart';
 import '../../widgets/header.dart';
 import '../dashboard.dart';
 

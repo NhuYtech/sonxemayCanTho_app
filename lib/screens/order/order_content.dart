@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sonxemaycantho/screens/export_order.dart';
-import 'package:sonxemaycantho/screens/order_entry.dart';
+import 'package:sonxemaycantho/screens/order/order_entry.dart';
 
 class OrderContent extends StatelessWidget {
   const OrderContent({super.key});

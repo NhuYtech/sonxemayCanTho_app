@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For date formatting
-import '../models/service_order.dart'; // Import ServiceOrder model
+import '../../models/service_order.dart'; // Import ServiceOrder model
 
 class OrderList extends StatefulWidget {
   const OrderList({super.key});

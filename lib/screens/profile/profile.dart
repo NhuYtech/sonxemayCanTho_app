@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sonxemaycantho/screens/view_profile.dart';
+import 'package:sonxemaycantho/screens/profile/view_profile.dart';
 import 'package:sonxemaycantho/services/auth_service.dart';
 import 'package:sonxemaycantho/screens/role.dart';
 

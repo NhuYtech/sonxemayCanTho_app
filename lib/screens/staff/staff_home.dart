@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:intl/intl.dart'; // Only if you use it for number formatting
-import 'package:sonxemaycantho/screens/order_content.dart';
+import 'package:sonxemaycantho/screens/order/order_content.dart';
 import 'package:sonxemaycantho/widgets/navigation_bar.dart';
-import '../profile.dart';
+import '../profile/profile.dart';
 import '../../widgets/header.dart';
 
 class StaffHome extends StatefulWidget {

@@ -1,7 +1,7 @@
 // lib/screens/customer/customer_home.dart
 import 'package:flutter/material.dart';
 import '../../widgets/header.dart';
-import '../profile.dart';
+import '../profile/profile.dart';
 
 class CustomerHome extends StatefulWidget {
   final String name;
