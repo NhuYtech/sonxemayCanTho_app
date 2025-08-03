@@ -32,47 +32,57 @@ class _LoginInternalUserState extends State<LoginInternalUser> {
     setState(() => _isLoading = true);
 
     try {
+      // Xác thực người dùng bằng email và mật khẩu (đã được giả định)
+      // Dùng số điện thoại làm email giả
+      final String emailAlias = '$phone@example.com';
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: emailAlias, password: password);
+
+      String? firebaseAuthUid = userCredential.user?.uid;
+
+      if (firebaseAuthUid == null) {
+        _showErrorDialog('Lỗi xác thực Firebase. Vui lòng thử lại.');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      debugPrint(
+        '>>> LoginInternalUser: Đăng nhập thành công. Firebase Auth UID: $firebaseAuthUid',
+      );
+
+      // Giả định vai trò và tên từ service
+      // Bạn cần thay thế phần này bằng code thực tế để lấy vai trò từ Firestore
       final userData = await _accountService.login(
         phoneNumber: phone,
         password: password,
       );
 
-      if (userData != null) {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .signInAnonymously();
-        String? firebaseAuthUid = userCredential.user?.uid;
-
-        if (firebaseAuthUid == null) {
-          _showErrorDialog('Lỗi xác thực Firebase. Vui lòng thử lại.');
-          setState(() => _isLoading = false);
-          return;
-        }
-
-        debugPrint(
-          '>>> LoginInternalUser: Đăng nhập tùy chỉnh thành công. Firebase Auth UID: $firebaseAuthUid',
-        );
-
-        final role = userData['role'];
-        final name = userData['fullName'];
-
-        Widget nextScreen;
-        if (role == 'manager') {
-          nextScreen = ManagerHome(name: name);
-        } else if (role == 'staff') {
-          nextScreen = StaffHome(name: name);
-        } else {
-          nextScreen = CustomerHome(name: name);
-        }
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => nextScreen),
-        );
-      } else {
+      if (userData == null) {
         _showErrorDialog(
           'Tài khoản không tồn tại, không hoạt động hoặc sai thông tin.',
         );
+        setState(() => _isLoading = false);
+        return;
       }
+
+      final role = userData['role'];
+      final name = userData['fullName'];
+
+      Widget nextScreen;
+      if (role == 'manager') {
+        nextScreen = ManagerHome(name: name);
+      } else if (role == 'staff') {
+        nextScreen = StaffHome(name: name);
+      } else {
+        nextScreen = CustomerHome(name: name);
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => nextScreen),
+      );
+    } on FirebaseAuthException catch (e) {
+      _showErrorDialog('Lỗi đăng nhập: ${e.message}');
     } catch (e) {
       _showErrorDialog('Đăng nhập thất bại: ${e.toString()}');
     } finally {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'customer/customer_home.dart';
 import 'register.dart';
 import '../services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -47,6 +48,23 @@ class _LoginState extends State<Login> {
 
       if (result != null) {
         final String fullName = result['fullName'] ?? 'Người dùng';
+        final String uid = result['uid'];
+
+        // Kiểm tra và tạo document trong Firestore nếu chưa tồn tại
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .get();
+        if (!doc.exists) {
+          await FirebaseFirestore.instance.collection('users').doc(uid).set({
+            'fullName': fullName,
+            'emailAlias': result['email'],
+            'role': 'customer', // Hoặc vai trò phù hợp
+            'isActive': true,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+
         _navigateToCustomerHome(fullName);
       } else {
         _showErrorDialog('Đăng nhập Google không thành công hoặc đã bị hủy.');

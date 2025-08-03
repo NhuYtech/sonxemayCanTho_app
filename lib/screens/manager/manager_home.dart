@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:sonxemaycantho/screens/chat.dart';
+// import 'package:sonxemaycantho/screens/chat.dart';
+import 'package:sonxemaycantho/screens/chat_list.dart';
 import 'package:sonxemaycantho/widgets/navigation_bar.dart';
 import '../profile.dart';
 import '../order.dart';

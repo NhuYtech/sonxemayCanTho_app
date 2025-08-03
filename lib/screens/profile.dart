@@ -17,7 +17,6 @@ class Profile extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-
             ListView(
               physics: const NeverScrollableScrollPhysics(),
               shrinkWrap: true,
@@ -27,7 +26,7 @@ class Profile extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ViewProfileScreen(),
+                      builder: (context) => ViewProfileScreen(), // Xóa const
                     ),
                   );
                 }),
@@ -60,6 +59,7 @@ class Profile extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.3),
             spreadRadius: 1.5,
             blurRadius: 5,
