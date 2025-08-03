@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'role.dart';
+import '../role.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class ManagerProfileScreen extends StatelessWidget {

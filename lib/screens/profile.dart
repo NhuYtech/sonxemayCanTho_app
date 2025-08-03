@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:sonxemaycantho/screens/view_profile.dart';
 import 'package:sonxemaycantho/services/auth_service.dart';
 import 'package:sonxemaycantho/screens/role.dart';
-import 'package:sonxemaycantho/screens/change_password.dart';
 
 class Profile extends StatelessWidget {
   final String name;
@@ -26,19 +25,10 @@ class Profile extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ViewProfileScreen(), // Xóa const
+                      builder: (context) => ViewProfileScreen(),
                     ),
                   );
                 }),
-                if (role == 'manager')
-                  _buildTile(Icons.lock, 'Đổi mật khẩu', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ChangePasswordScreen(role: role),
-                      ),
-                    );
-                  }),
                 _buildTile(Icons.logout, 'Đăng xuất', () {
                   _showLogoutDialog(context);
                 }),
@@ -59,7 +49,6 @@ class Profile extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.3),
             spreadRadius: 1.5,
             blurRadius: 5,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:sonxemaycantho/screens/login_internal_user.dart';
-import 'login.dart';
+import 'auth/login.dart';
 
 class RoleSelection extends StatelessWidget {
   const RoleSelection({super.key});
@@ -45,22 +44,10 @@ class RoleSelection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
       child: ElevatedButton(
         onPressed: () {
-          if (role == 'Khách hàng') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const Login()),
-            );
-          } else if (role == 'Nhân viên') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginInternalUser()),
-            );
-          } else if (role == 'Quản lý') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginInternalUser()),
-            );
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => Login(role: role)),
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,

@@ -24,7 +24,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   String _email = 'Đang tải...';
   String _phone = 'Đang tải...';
   String _address = 'Đang tải...';
-  String _role = 'Đang tải...';
   String _createdAt = 'Đang tải...';
   String _updatedAt = 'Đang tải...';
   String? _avatarUrl;
@@ -66,7 +65,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         _email = data['emailAlias'] ?? currentUser.email ?? 'Chưa cập nhật';
         _phone = data['phoneNumber'] ?? 'Chưa cập nhật';
         _address = data['address'] ?? 'Chưa cập nhật';
-        _role = data['role'] ?? 'Chưa cập nhật';
+        _isActive = data['isActive'] ?? true;
         _createdAt = data['createdAt'] != null
             ? dateFormat.format((data['createdAt'] as Timestamp).toDate())
             : 'Chưa cập nhật';
@@ -74,7 +73,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
             ? dateFormat.format((data['updatedAt'] as Timestamp).toDate())
             : 'Chưa cập nhật';
         _avatarUrl = data['avatarURL']?.toString().trim();
-        _isActive = data['isActive'] ?? true;
       });
     } catch (e) {
       print('Error: $e');
@@ -117,8 +115,8 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   void _showError(String message) {
     if (mounted) {
       setState(() {
-        _fullName = _email = _phone = _address = _role = _createdAt =
-            _updatedAt = 'Không có dữ liệu';
+        _fullName = _email = _phone = _address = _createdAt = _updatedAt =
+            'Không có dữ liệu';
         _isActive = false;
       });
       ScaffoldMessenger.of(
@@ -185,8 +183,8 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                         bottom: 0,
                         right: 0,
                         child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFC1473B),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFC1473B),
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
@@ -209,8 +207,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                   _buildInfoCard(Icons.phone, 'Số điện thoại', _phone),
                   const SizedBox(height: 16),
                   _buildInfoCard(Icons.location_on, 'Địa chỉ', _address),
-                  const SizedBox(height: 16),
-                  _buildInfoCard(Icons.work, 'Vai trò', _role),
                   const SizedBox(height: 16),
                   _buildInfoCard(
                     Icons.check_circle,
@@ -239,7 +235,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
       ),
       child: Row(
         children: [
