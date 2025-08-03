@@ -1,15 +1,19 @@
-// lib/screens/customer_support/manager_customer_support.dart
+// lib/screens/chat/customer_support.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
-import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth để lấy User ID
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class CustomerSupport extends StatefulWidget {
   final String name;
+  final String chatId;
+  final String customerId;
+
   const CustomerSupport({
     super.key,
     required this.name,
-    required String chatId,
-    required String customerId,
+    required this.chatId,
+    required this.customerId,
   });
 
   @override
@@ -19,18 +23,25 @@ class CustomerSupport extends StatefulWidget {
 class _CustomerSupportState extends State<CustomerSupport> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  String? _currentChatId;
-  String? _currentUserId;
-  bool _isChatLoading = true;
+  User? _currentUser;
+  late Stream<QuerySnapshot> _messageStream;
 
   @override
   void initState() {
     super.initState();
-    _initializeChat();
+    _currentUser = _auth.currentUser;
+    _messageStream = _firestore
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+
+    // Mark messages as read when the chat screen is opened
+    _markMessagesAsRead();
   }
 
   @override
@@ -40,179 +51,53 @@ class _CustomerSupportState extends State<CustomerSupport> {
     super.dispose();
   }
 
-  void _initializeChat() async {
-    debugPrint('>>> _initializeChat: Starting chat initialization.');
+  // Cập nhật trạng thái 'read' cho các tin nhắn chưa đọc
+  void _markMessagesAsRead() async {
+    final unreadMessages = await _firestore
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('messages')
+        .where('read', isEqualTo: false)
+        .get();
 
-    final user = _auth.currentUser;
-    if (user != null) {
-      if (mounted) {
-        setState(() {
-          _currentUserId = user.uid;
-        });
+    for (var message in unreadMessages.docs) {
+      if (message.data()['senderId'] != _currentUser!.uid) {
+        message.reference.update({'read': true});
       }
-      debugPrint('>>> _initializeChat: Current user ID: $_currentUserId');
-    } else {
-      debugPrint(
-        '>>> _initializeChat: No user currently signed in. _currentUserId is null.',
-      );
-      if (mounted) {
-        setState(() {
-          _isChatLoading = false;
-        });
-      }
-      return;
-    }
-
-    await _findOrCreateChat();
-
-    if (mounted) {
-      setState(() {
-        _isChatLoading = false;
-      });
-    }
-    debugPrint(
-      '>>> _initializeChat: Chat initialization finished. _currentChatId: $_currentChatId',
-    );
-  }
-
-  Future<void> _findOrCreateChat() async {
-    final String customerIdForThisChat = '6YHcpasDKZQIQFacavCgWnTNZca2';
-
-    debugPrint('>>> _findOrCreateChat: Attempting to find/create chat.');
-    debugPrint(
-      '>>> _findOrCreateChat: _currentUserId (inside findOrCreateChat): $_currentUserId',
-    );
-    debugPrint(
-      '>>> _findOrCreateChat: customerIdForThisChat: $customerIdForThisChat',
-    );
-
-    if (_currentUserId == null) {
-      debugPrint(
-        '>>> _findOrCreateChat: Cannot find or create chat: _currentUserId is null.',
-      );
-      return;
-    }
-
-    try {
-      debugPrint(
-        '>>> _findOrCreateChat: Querying chats where participants contain $_currentUserId',
-      );
-      final querySnapshot = await _firestore
-          .collection('chats')
-          .where('participants', arrayContains: _currentUserId)
-          .get();
-
-      String? foundChatId;
-      debugPrint(
-        '>>> _findOrCreateChat: Found ${querySnapshot.docs.length} chats containing current user.',
-      );
-
-      for (var doc in querySnapshot.docs) {
-        final participants = List<String>.from(doc['participants']);
-        debugPrint(
-          '>>> _findOrCreateChat: Checking chat ${doc.id} with participants: $participants',
-        );
-        if (participants.contains(customerIdForThisChat)) {
-          foundChatId = doc.id;
-          debugPrint(
-            '>>> _findOrCreateChat: Found matching chat with customer ID: ${doc.id}',
-          );
-          break;
-        }
-      }
-
-      if (foundChatId != null) {
-        if (mounted) {
-          setState(() {
-            _currentChatId = foundChatId;
-          });
-        }
-        debugPrint(
-          '>>> _findOrCreateChat: Successfully set _currentChatId to: $_currentChatId',
-        );
-      } else {
-        debugPrint(
-          '>>> _findOrCreateChat: No existing chat found with customer. Creating new chat.',
-        );
-        final newChatDoc = await _firestore.collection('chats').add({
-          'participants': [_currentUserId!, customerIdForThisChat],
-          'lastMessage': '',
-          'lastMessageTimestamp': FieldValue.serverTimestamp(),
-          'status': 'open',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-        if (mounted) {
-          setState(() {
-            _currentChatId = newChatDoc.id;
-          });
-        }
-        debugPrint(
-          '>>> _findOrCreateChat: Created new chat with ID: $_currentChatId',
-        );
-      }
-    } catch (e) {
-      debugPrint('>>> _findOrCreateChat: Error finding or creating chat: $e');
     }
   }
 
   void _sendMessage() async {
     final text = _controller.text.trim();
-
-    debugPrint('>>> _sendMessage: Text: "$text"');
-    debugPrint('>>> _sendMessage: _currentChatId: $_currentChatId');
-    debugPrint('>>> _sendMessage: _currentUserId: $_currentUserId');
-
-    if (text.isEmpty || _currentChatId == null || _currentUserId == null) {
-      debugPrint(
-        '>>> _sendMessage: Cannot send message: Text is empty, chat ID or user ID is null. Returning.',
-      );
+    if (text.isEmpty || _currentUser == null) {
       return;
     }
 
     try {
       await _firestore
           .collection('chats')
-          .doc(_currentChatId!)
+          .doc(widget.chatId)
           .collection('messages')
           .add({
-            'senderId': _currentUserId,
+            'senderId': _currentUser!.uid,
             'text': text,
             'timestamp': FieldValue.serverTimestamp(),
             'read': false,
           });
 
-      await _firestore.collection('chats').doc(_currentChatId!).update({
+      await _firestore.collection('chats').doc(widget.chatId).update({
         'lastMessage': text,
         'lastMessageTimestamp': FieldValue.serverTimestamp(),
       });
 
       _controller.clear();
-      debugPrint(
-        '>>> _sendMessage: Message sent successfully. Clearing text field.',
-      );
       _scrollController.animateTo(
         0.0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } catch (e) {
-      debugPrint('>>> _sendMessage: Error sending message: $e');
-    }
-  }
-
-  void _markMessageAsRead(String chatId, String messageId) async {
-    try {
-      await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .doc(messageId)
-          .update({'read': true});
-      debugPrint(
-        '>>> _markMessageAsRead: Message $messageId in chat $chatId marked as read.',
-      );
-    } catch (e) {
-      debugPrint('>>> _markMessageAsRead: Error marking message as read: $e');
+      debugPrint('Lỗi khi gửi tin nhắn: $e');
     }
   }
 
@@ -220,7 +105,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Hỗ trợ khách hàng: ${widget.name}'),
+        title: Text('Chat với ${widget.name}'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
@@ -228,257 +113,133 @@ class _CustomerSupportState extends State<CustomerSupport> {
         child: Column(
           children: [
             Expanded(
-              child: _isChatLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                      ),
-                    )
-                  : _currentChatId == null
-                  ? const Center(
-                      child: Text(
-                        'Không thể tải cuộc trò chuyện. Vui lòng thử lại.',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    )
-                  : StreamBuilder<QuerySnapshot>(
-                      stream: _firestore
-                          .collection('chats')
-                          .doc(_currentChatId!)
-                          .collection('messages')
-                          .orderBy('timestamp', descending: true)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.red,
-                              ),
-                            ),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          debugPrint('Stream error: ${snapshot.error}');
-                          return Center(
-                            child: Text('Đã xảy ra lỗi: ${snapshot.error}'),
-                          );
-                        }
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'Chưa có tin nhắn nào. Bắt đầu cuộc trò chuyện!',
-                            ),
-                          );
-                        }
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _messageStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text('Đã xảy ra lỗi: ${snapshot.error}'),
+                    );
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('Chưa có tin nhắn nào.'));
+                  }
 
-                        final messages = snapshot.data!.docs;
-                        List<Widget> messageBubbles = [];
-                        for (var messageDoc in messages) {
-                          final messageData =
-                              messageDoc.data() as Map<String, dynamic>;
-                          final messageText = messageData['text'] as String;
-                          final messageSenderId =
-                              messageData['senderId'] as String?;
-                          final isRead = messageData['read'] as bool? ?? false;
-                          final currentUserIsSender =
-                              (messageSenderId == _currentUserId);
+                  final messages = snapshot.data!.docs;
+                  return ListView.builder(
+                    controller: _scrollController,
+                    reverse: true,
+                    padding: const EdgeInsets.all(12),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final messageData =
+                          messages[index].data() as Map<String, dynamic>;
+                      final isCurrentUser =
+                          messageData['senderId'] == _currentUser?.uid;
+                      final timestamp = messageData['timestamp'] as Timestamp?;
+                      final timeString = timestamp != null
+                          ? DateFormat('HH:mm').format(timestamp.toDate())
+                          : '';
 
-                          if (!currentUserIsSender && !isRead) {
-                            Future.microtask(
-                              () => _markMessageAsRead(
-                                _currentChatId!,
-                                messageDoc.id,
-                              ),
-                            );
-                          }
-
-                          messageBubbles.add(
-                            Align(
-                              alignment: currentUserIsSender
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4.0,
+                      return Align(
+                        alignment: isCurrentUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          child: Column(
+                            crossAxisAlignment: isCurrentUser
+                                ? CrossAxisAlignment.end
+                                : CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                constraints: const BoxConstraints(
+                                  maxWidth: 280,
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    if (!currentUserIsSender) ...[
-                                      const CircleAvatar(
-                                        radius: 16,
-                                        backgroundColor: Colors.blueGrey,
-                                        child: Icon(
-                                          Icons.person,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                    ],
-                                    Flexible(
-                                      child: Container(
-                                        padding: const EdgeInsets.all(12),
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 280,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: currentUserIsSender
-                                              ? const Color(0xFFB3E5FC)
-                                              : Colors.white,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: const Radius.circular(16),
-                                            topRight: const Radius.circular(16),
-                                            bottomLeft: Radius.circular(
-                                              currentUserIsSender ? 16 : 4,
-                                            ),
-                                            bottomRight: Radius.circular(
-                                              currentUserIsSender ? 4 : 16,
-                                            ),
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.grey.withOpacity(
-                                                0.2,
-                                              ),
-                                              spreadRadius: 1,
-                                              blurRadius: 3,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              currentUserIsSender
-                                              ? CrossAxisAlignment.end
-                                              : CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              messageText,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                              ),
-                                            ),
-                                            if (currentUserIsSender)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  top: 4.0,
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize:
-                                                      MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      isRead
-                                                          ? 'Đã xem'
-                                                          : 'Đã gửi',
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        color: Colors.black54,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Icon(
-                                                      isRead
-                                                          ? Icons.done_all
-                                                          : Icons.done,
-                                                      size: 14,
-                                                      color: isRead
-                                                          ? Colors.blue
-                                                          : Colors.black54,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                      ),
+                                decoration: BoxDecoration(
+                                  color: isCurrentUser
+                                      ? const Color(0xFFB3E5FC)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.2),
+                                      spreadRadius: 1,
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    if (currentUserIsSender)
-                                      const SizedBox(width: 8),
                                   ],
                                 ),
+                                child: Text(
+                                  messageData['text'],
+                                  style: const TextStyle(fontSize: 15),
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                        return ListView(
-                          controller: _scrollController,
-                          reverse: true,
-                          padding: const EdgeInsets.all(12),
-                          children: messageBubbles,
-                        );
-                      },
-                    ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    timeString,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  if (isCurrentUser)
+                                    Icon(
+                                      Icons.done_all,
+                                      size: 16,
+                                      color:
+                                          (messageData['read'] as bool? ??
+                                              false)
+                                          ? Colors.blue
+                                          : Colors.grey,
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _controller,
-                        decoration: const InputDecoration(
-                          hintText: 'Tin nhắn...',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 8,
-                          ),
+                    child: TextField(
+                      controller: _controller,
+                      decoration: InputDecoration(
+                        hintText: 'Nhập tin nhắn...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
                         ),
-                        onSubmitted: (text) {
-                          if (!_isChatLoading &&
-                              _currentChatId != null &&
-                              _currentUserId != null) {
-                            _sendMessage();
-                          } else {
-                            debugPrint(
-                              '>>> TextField onSubmitted: Chat not ready to send message.',
-                            );
-                          }
-                        },
-                        maxLines: null,
-                        keyboardType: TextInputType.multiline,
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                        ),
                       ),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: () {
-                      if (!_isChatLoading &&
-                          _currentChatId != null &&
-                          _currentUserId != null) {
-                        _sendMessage();
-                      } else {
-                        debugPrint(
-                          '>>> Send Button onTap: Chat not ready to send message.',
-                        );
-                      }
-                    },
+                    onTap: _sendMessage,
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
@@ -494,7 +255,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                       child: const Icon(
                         Icons.send,
                         color: Colors.white,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
                   ),

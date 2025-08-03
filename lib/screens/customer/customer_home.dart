@@ -1,8 +1,9 @@
 // lib/screens/customer/customer_home.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Thêm import Firestore để xử lý dữ liệu thực
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../widgets/header.dart';
 import '../profile/profile.dart';
+import 'customer_chat.dart'; // Import màn hình chat của khách hàng
 
 class CustomerHome extends StatefulWidget {
   final String name;
@@ -14,7 +15,6 @@ class CustomerHome extends StatefulWidget {
 
 class _CustomerHomeState extends State<CustomerHome> {
   int _selectedIndex = 0;
-
   late final List<Widget> _pages;
 
   // Khởi tạo biến đếm đơn hàng với giá trị ban đầu
@@ -24,10 +24,12 @@ class _CustomerHomeState extends State<CustomerHome> {
   void initState() {
     super.initState();
 
+    // Khởi tạo các màn hình
     _pages = [
       _buildHomeTab(),
       const Center(child: Text('📦 Danh sách đơn hàng')),
-      const Center(child: Text('💬 Tin nhắn')),
+      // Thay thế màn hình Center bằng màn hình chat của khách hàng
+      CustomerChatScreen(customerName: widget.name),
       Profile(name: widget.name, role: 'customer'),
     ];
 
@@ -42,14 +44,18 @@ class _CustomerHomeState extends State<CustomerHome> {
           .get();
       // Đếm số lượng đơn hàng, có thể thêm logic lọc theo người dùng sau
       final int ordersCount = orderSnapshot.docs.length;
-      setState(() {
-        _customerOrdersCount = '$ordersCount đơn hàng';
-      });
+      if (mounted) {
+        setState(() {
+          _customerOrdersCount = '$ordersCount đơn hàng';
+        });
+      }
     } catch (e) {
-      print('Lỗi khi fetch dữ liệu đơn hàng: $e');
-      setState(() {
-        _customerOrdersCount = 'Lỗi tải';
-      });
+      debugPrint('Lỗi khi fetch dữ liệu đơn hàng: $e');
+      if (mounted) {
+        setState(() {
+          _customerOrdersCount = 'Lỗi tải';
+        });
+      }
     }
   }
 

@@ -1,9 +1,11 @@
+// lib/screens/customer_support/chat.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:intl/intl.dart';
+import 'package:intl/intl.dart';
 import 'package:sonxemaycantho/screens/chat/customer_support.dart';
 
+// Màn hình hiển thị danh sách các cuộc trò chuyện
 class ChatList extends StatefulWidget {
   final String managerName;
   const ChatList({super.key, required this.managerName});
@@ -17,7 +19,6 @@ class _ChatListState extends State<ChatList> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _currentUser;
   bool _isLoading = true;
-  final Map<String, String> _userNamesCache = {};
 
   @override
   void initState() {
@@ -25,220 +26,182 @@ class _ChatListState extends State<ChatList> {
     _loadCurrentUser();
   }
 
+  // Lấy thông tin người dùng hiện tại
   void _loadCurrentUser() {
     _currentUser = _auth.currentUser;
-    setState(() {
-      _isLoading = false;
-    });
+    // Cập nhật giao diện nếu cần
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+    if (_currentUser == null) {
+      debugPrint('>>> ChatList: No user signed in.');
+      return;
+    }
+    debugPrint('>>> ChatList: Current user ID: ${_currentUser!.uid}');
   }
 
+  // Lấy tên của người dùng từ Firestore dựa trên UID
   Future<String> _getUserName(String uid) async {
-    if (_userNamesCache.containsKey(uid)) return _userNamesCache[uid]!;
-
-    if (uid == _currentUser?.uid) {
-      _userNamesCache[uid] = widget.managerName;
-      return widget.managerName;
-    }
-
+    // Thử tìm kiếm trong collection 'users' (cho admin/staff)
     try {
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(uid)
-          .get();
-      if (userDoc.exists) {
-        final name = userDoc['name'] ?? 'Người dùng ẩn danh';
-        _userNamesCache[uid] = name;
-        return name;
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists &&
+          userDoc.data() != null &&
+          userDoc.data()!['fullName'] != null) {
+        return userDoc.data()!['fullName'];
       }
 
-      DocumentSnapshot customerDoc = await _firestore
+      // Thử tìm kiếm trong collection 'customers'
+      final customerDoc = await _firestore
           .collection('customers')
           .doc(uid)
           .get();
-      if (customerDoc.exists) {
-        final name = customerDoc['name'] ?? 'Khách hàng ẩn danh';
-        _userNamesCache[uid] = name;
-        return name;
+      if (customerDoc.exists &&
+          customerDoc.data() != null &&
+          customerDoc.data()!['name'] != null) {
+        return customerDoc.data()!['name'];
       }
-
-      _userNamesCache[uid] = 'Người dùng không xác định';
-      return 'Người dùng không xác định';
     } catch (e) {
-      _userNamesCache[uid] = 'Lỗi tải tên';
-      return 'Lỗi tải tên';
+      debugPrint('Lỗi khi lấy tên người dùng: $e');
     }
+
+    return 'Người dùng không xác định';
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFC1473B)),
-      );
-    }
-
-    if (_currentUser == null) {
-      return const Center(
-        child: Text('Vui lòng đăng nhập để xem danh sách chat.'),
-      );
+    if (_isLoading || _currentUser == null) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Header tự làm
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(
-              top: 50,
-              left: 16,
-              right: 16,
-              bottom: 16,
+      // appBar: AppBar(
+      //   title: const Text('Hỗ trợ khách hàng'),
+      //   backgroundColor: Colors.red,
+      //   foregroundColor: Colors.white,
+      // ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore
+            .collection('chats')
+            .where('participants', arrayContains: _currentUser!.uid)
+            .orderBy('lastMessageTimestamp', descending: true)
+            .snapshots(),
+        builder: (context, chatSnapshot) {
+          if (chatSnapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (chatSnapshot.hasError) {
+            return Center(child: Text('Đã xảy ra lỗi: ${chatSnapshot.error}'));
+          }
+          if (!chatSnapshot.hasData || chatSnapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('Chưa có cuộc trò chuyện nào.'));
+          }
+
+          final chatDocs = chatSnapshot.data!.docs;
+
+          return FutureBuilder(
+            future: Future.wait(
+              chatDocs.map((chatDoc) async {
+                final chatData = chatDoc.data() as Map<String, dynamic>;
+                final otherParticipantId = chatData['participants'].firstWhere(
+                  (id) => id != _currentUser!.uid,
+                );
+
+                final chatPartnerName = await _getUserName(otherParticipantId);
+                return {
+                  'chatDoc': chatDoc,
+                  'chatData': chatData,
+                  'otherParticipantId': otherParticipantId,
+                  'chatPartnerName': chatPartnerName,
+                };
+              }),
             ),
-            color: const Color(0xFFC1473B),
-            child: const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Đoạn tin nhắn',
-                style: TextStyle(
-                  fontSize: 22,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+            builder: (context, AsyncSnapshot<List<dynamic>> futureSnapshot) {
+              if (futureSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (futureSnapshot.hasError) {
+                return Center(
+                  child: Text('Đã xảy ra lỗi: ${futureSnapshot.error}'),
+                );
+              }
+              if (!futureSnapshot.hasData) {
+                return const Center(child: Text('Không tìm thấy dữ liệu.'));
+              }
 
-          // Thanh tìm kiếm
-          Container(
-            color: Colors.grey[200],
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {},
-                ),
-                fillColor: Colors.white,
-                filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(32),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
+              final chatItems = futureSnapshot.data!;
 
-          // Danh sách chat
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('chats')
-                  .where('participants', arrayContains: _currentUser!.uid)
-                  .orderBy('lastMessageTimestamp', descending: true)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFC1473B)),
-                  );
-                }
+              return ListView.builder(
+                itemCount: chatItems.length,
+                itemBuilder: (context, index) {
+                  final item = chatItems[index];
+                  final chatDoc = item['chatDoc'] as DocumentSnapshot;
+                  final chatData = item['chatData'] as Map<String, dynamic>;
+                  final otherParticipantId =
+                      item['otherParticipantId'] as String;
+                  final chatPartnerName = item['chatPartnerName'] as String;
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text('Không có cuộc trò chuyện nào.'),
-                  );
-                }
+                  final lastMessageTimestamp =
+                      chatData['lastMessageTimestamp'] as Timestamp?;
+                  final lastMessageTime = lastMessageTimestamp != null
+                      ? DateFormat(
+                          'HH:mm',
+                        ).format(lastMessageTimestamp.toDate())
+                      : '';
 
-                final chats = snapshot.data!.docs;
-                return ListView.builder(
-                  itemCount: chats.length,
-                  itemBuilder: (context, index) {
-                    final chat = chats[index].data() as Map<String, dynamic>;
-                    final chatId = chats[index].id;
-                    final participants = List<String>.from(
-                      chat['participants'],
-                    );
-                    final otherId = participants.firstWhere(
-                      (uid) => uid != _currentUser!.uid,
-                    );
-
-                    return FutureBuilder<String>(
-                      future: _getUserName(otherId),
-                      builder: (context, nameSnapshot) {
-                        final name = nameSnapshot.data ?? 'Đang tải...';
-                        final message =
-                            chat['lastMessage'] ?? 'Chưa có tin nhắn';
-                        if (chat['lastMessageTimestamp'] is Timestamp) {}
-
-                        return Column(
-                          children: [
-                            ListTile(
-                              leading: const CircleAvatar(
-                                backgroundImage: AssetImage(
-                                  'assets/avatar.png',
-                                ), // Đặt avatar bạn muốn
-                                radius: 24,
-                              ),
-                              title: Text(
-                                name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                message,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CustomerSupport(
-                                      name: name,
-                                      chatId: chatId,
-                                      customerId: otherId,
-                                    ),
-                                  ),
-                                );
-                              },
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        backgroundColor: Colors.red,
+                        child: Icon(Icons.person, color: Colors.white),
+                      ),
+                      title: Text(
+                        chatPartnerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                        ),
+                      ),
+                      subtitle: Text(
+                        chatData['lastMessage'] ?? 'Chưa có tin nhắn nào.',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      ),
+                      trailing: Text(
+                        lastMessageTime,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CustomerSupport(
+                              name: chatPartnerName,
+                              chatId: chatDoc.id,
+                              customerId: otherParticipantId,
                             ),
-                            const Divider(height: 1),
-                          ],
+                          ),
                         );
                       },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
-
-      // bottomNavigationBar: BottomNavigationBar(
-      //   type: BottomNavigationBarType.fixed,
-      //   selectedItemColor: const Color(0xFFC1473B),
-      //   unselectedItemColor: Colors.grey,
-      //   currentIndex: 2,
-      //   items: const [
-      //     BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-      //     BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Danh sách'),
-      //     BottomNavigationBarItem(
-      //       icon: Icon(Icons.chat_bubble),
-      //       label: 'Tin nhắn',
-      //     ),
-      //     BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tài khoản'),
-      //   ],
-      //   onTap: (index) {
-      //     // TODO: Điều hướng nếu cần
-      //   },
-      // ),
     );
   }
 }
