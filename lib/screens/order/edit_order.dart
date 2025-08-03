@@ -21,9 +21,9 @@ class _EditOrderState extends State<EditOrder> {
 
   List<item.ServiceOrderItem> _orderItems = [];
   bool _isLoading = false;
-  String _selectedStatus = '';
+  late String _selectedStatus;
 
-  final List<String> _carModels = [
+  static const List<String> _carModels = [
     'Vision',
     'Future 125',
     'Scoopy',
@@ -34,14 +34,28 @@ class _EditOrderState extends State<EditOrder> {
     'SH Mode',
   ];
 
-  final List<String> _orderStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
+  static const List<String> _orderStatuses = [
+    'Đã nhận',
+    'Đang sơn',
+    'Đã sơn xong',
+    'Đã gửi', // Thêm trạng thái 'Đã gửi' vào đây
+  ];
 
   @override
   void initState() {
     super.initState();
     _storeNameController.text = widget.serviceOrder.storeName;
     _generalNoteController.text = widget.serviceOrder.note ?? '';
-    _selectedStatus = widget.serviceOrder.status;
+
+    // Đảm bảo giá trị của DropdownButtonFormField là hợp lệ
+    // Nếu trạng thái từ database không tồn tại trong danh sách, gán giá trị mặc định.
+    if (_orderStatuses.contains(widget.serviceOrder.status)) {
+      _selectedStatus = widget.serviceOrder.status;
+    } else {
+      _selectedStatus =
+          _orderStatuses.first; // Hoặc gán một giá trị mặc định khác
+    }
+
     _fetchOrderItems();
   }
 
@@ -60,12 +74,15 @@ class _EditOrderState extends State<EditOrder> {
         return Colors.orange;
       case 'Đã sơn xong':
         return Colors.green;
+      case 'Đã gửi':
+        return Colors.grey;
       default:
         return Colors.grey;
     }
   }
 
   Future<void> _fetchOrderItems() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final snapshot = await _firestore
@@ -73,15 +90,19 @@ class _EditOrderState extends State<EditOrder> {
           .where('serviceOrderId', isEqualTo: widget.serviceOrder.id)
           .get();
 
-      setState(() {
-        _orderItems = snapshot.docs.map((doc) {
-          return item.ServiceOrderItem.fromMap(doc.data(), doc.id);
-        }).toList();
-      });
+      if (mounted) {
+        setState(() {
+          _orderItems = snapshot.docs.map((doc) {
+            return item.ServiceOrderItem.fromMap(doc.data(), doc.id);
+          }).toList();
+        });
+      }
     } catch (e) {
       print('Lỗi khi tải chi tiết đơn hàng: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -111,6 +132,7 @@ class _EditOrderState extends State<EditOrder> {
 
     _formKey.currentState!.save();
 
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
@@ -131,12 +153,10 @@ class _EditOrderState extends State<EditOrder> {
 
       for (var orderItem in _orderItems) {
         if (orderItem.id == null) {
-          // Thêm mới nếu chưa có id
           await _firestore
               .collection('serviceOrderItems')
               .add(orderItem.toMap());
         } else {
-          // Cập nhật nếu đã có id
           await _firestore
               .collection('serviceOrderItems')
               .doc(orderItem.id)
@@ -144,21 +164,27 @@ class _EditOrderState extends State<EditOrder> {
         }
       }
 
-      _showConfirmationDialog(
-        title: 'Cập nhật đơn hàng thành công!',
-        content: 'Đơn hàng của bạn đã được cập nhật.',
-        isSuccess: true,
-      );
+      if (mounted) {
+        _showConfirmationDialog(
+          title: 'Cập nhật đơn hàng thành công!',
+          content: 'Đơn hàng của bạn đã được cập nhật.',
+          isSuccess: true,
+        );
+      }
     } catch (e) {
       print('Lỗi khi cập nhật đơn hàng: $e');
-      _showConfirmationDialog(
-        title: 'Lỗi!',
-        content:
-            'Đã xảy ra lỗi khi cập nhật đơn hàng. Vui lòng thử lại. Lỗi: $e',
-        isSuccess: false,
-      );
+      if (mounted) {
+        _showConfirmationDialog(
+          title: 'Lỗi!',
+          content:
+              'Đã xảy ra lỗi khi cập nhật đơn hàng. Vui lòng thử lại. Lỗi: $e',
+          isSuccess: false,
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -208,6 +234,7 @@ class _EditOrderState extends State<EditOrder> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextFormField(
+                      key: const Key('store_name_field'), // Thêm key
                       controller: _storeNameController,
                       decoration: InputDecoration(
                         labelText: 'Tên cửa hàng',
@@ -225,6 +252,7 @@ class _EditOrderState extends State<EditOrder> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
+                      key: const Key('general_note_field'), // Thêm key
                       controller: _generalNoteController,
                       maxLines: 3,
                       decoration: InputDecoration(
@@ -303,6 +331,9 @@ class _EditOrderState extends State<EditOrder> {
                         int index = entry.key;
                         item.ServiceOrderItem orderItem = entry.value;
                         return Padding(
+                          key: Key(
+                            orderItem.id ?? 'order_item_${index}',
+                          ), // Thêm key cho Padding
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: Card(
                             elevation: 3,
@@ -336,6 +367,9 @@ class _EditOrderState extends State<EditOrder> {
                                   ),
                                   const SizedBox(height: 8),
                                   DropdownButtonFormField<String>(
+                                    key: Key(
+                                      'car_model_${orderItem.id ?? index}',
+                                    ), // Thêm key
                                     value: orderItem.carModel,
                                     decoration: const InputDecoration(
                                       labelText: 'Dòng xe',
@@ -355,6 +389,9 @@ class _EditOrderState extends State<EditOrder> {
                                   ),
                                   const SizedBox(height: 8),
                                   TextFormField(
+                                    key: Key(
+                                      'quantity_${orderItem.id ?? index}',
+                                    ), // Thêm key
                                     initialValue: orderItem.quantity.toString(),
                                     decoration: const InputDecoration(
                                       labelText: 'Số lượng',
@@ -379,6 +416,9 @@ class _EditOrderState extends State<EditOrder> {
                                   ),
                                   const SizedBox(height: 8),
                                   TextFormField(
+                                    key: Key(
+                                      'color_${orderItem.id ?? index}',
+                                    ), // Thêm key
                                     initialValue: orderItem.color,
                                     decoration: const InputDecoration(
                                       labelText: 'Màu sắc',

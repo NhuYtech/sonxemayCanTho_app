@@ -1,5 +1,6 @@
 // lib/screens/customer/customer_home.dart
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Thêm import Firestore để xử lý dữ liệu thực
 import '../../widgets/header.dart';
 import '../profile/profile.dart';
 
@@ -16,9 +17,8 @@ class _CustomerHomeState extends State<CustomerHome> {
 
   late final List<Widget> _pages;
 
-  String _customerOrdersCount = '12 đơn hàng';
-  String _pendingSupportTickets = '3 yêu cầu';
-  String _loyaltyPoints = '5,000 điểm';
+  // Khởi tạo biến đếm đơn hàng với giá trị ban đầu
+  String _customerOrdersCount = 'Đang tải...';
 
   @override
   void initState() {
@@ -34,13 +34,23 @@ class _CustomerHomeState extends State<CustomerHome> {
     _fetchCustomerDashboardData();
   }
 
+  // Hàm mới để fetch dữ liệu dashboard cho khách hàng
   void _fetchCustomerDashboardData() async {
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _customerOrdersCount = '15 đơn hàng';
-      _pendingSupportTickets = '1 yêu cầu';
-      _loyaltyPoints = '5,250 điểm';
-    });
+    try {
+      final QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
+          .collection('serviceOrders')
+          .get();
+      // Đếm số lượng đơn hàng, có thể thêm logic lọc theo người dùng sau
+      final int ordersCount = orderSnapshot.docs.length;
+      setState(() {
+        _customerOrdersCount = '$ordersCount đơn hàng';
+      });
+    } catch (e) {
+      print('Lỗi khi fetch dữ liệu đơn hàng: $e');
+      setState(() {
+        _customerOrdersCount = 'Lỗi tải';
+      });
+    }
   }
 
   @override
@@ -77,18 +87,6 @@ class _CustomerHomeState extends State<CustomerHome> {
           _customerOrdersCount,
           Icons.shopping_bag,
           const Color(0xFFE3F2FD),
-        ),
-        _buildStatCard(
-          'Yêu cầu hỗ trợ đang chờ:',
-          _pendingSupportTickets,
-          Icons.support_agent,
-          const Color(0xFFFFFDE7),
-        ),
-        _buildStatCard(
-          'Điểm tích lũy:',
-          _loyaltyPoints,
-          Icons.star,
-          const Color(0xFFE8F5E9),
         ),
       ],
     );

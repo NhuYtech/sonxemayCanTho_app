@@ -52,12 +52,39 @@ class _OrderListState extends State<OrderList> {
 
   /// Điều hướng đến màn hình EditOrder để chỉnh sửa đơn hàng đã chọn.
   void _editOrder(ServiceOrder order) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        // Chuyển đối tượng ServiceOrder sang màn hình EditOrder
-        builder: (context) => EditOrder(serviceOrder: order),
-      ),
+    // Kiểm tra nếu đơn hàng đã gửi thì không được chỉnh sửa nữa
+    if (order.status == 'Đã gửi') {
+      _showAlertDialog(
+        title: 'Không thể chỉnh sửa',
+        content: 'Đơn hàng đã được gửi đi, không thể chỉnh sửa nữa.',
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          // Chuyển đối tượng ServiceOrder sang màn hình EditOrder
+          builder: (context) => EditOrder(serviceOrder: order),
+        ),
+      );
+    }
+  }
+
+  /// Hàm phụ trợ để hiển thị hộp thoại thông báo.
+  void _showAlertDialog({required String title, required String content}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -135,7 +162,7 @@ class _OrderListState extends State<OrderList> {
                 case 'Đã sơn xong':
                   statusColor = Colors.green;
                   break;
-                case 'Đã hoàn thành': // Trạng thái mới
+                case 'Đã gửi': // Trạng thái mới
                   statusColor = Colors.deepPurple;
                   break;
                 default:
@@ -216,6 +243,7 @@ class _OrderListState extends State<OrderList> {
                               const SizedBox(width: 8),
                               TextButton(
                                 onPressed: () {
+                                  // Kiểm tra trước khi chỉnh sửa
                                   _editOrder(order);
                                 },
                                 child: const Text(
@@ -243,8 +271,8 @@ class _OrderListState extends State<OrderList> {
           // Điều hướng đến màn hình OrderEntry để thêm mới đơn hàng
           Navigator.push(
             context,
-            // Truyền null cho orderToEdit để báo hiệu là thêm mới
             MaterialPageRoute(
+              // Truyền null cho orderToEdit để báo hiệu là thêm mới
               builder: (context) => const OrderEntry(orderToEdit: null),
             ),
           );

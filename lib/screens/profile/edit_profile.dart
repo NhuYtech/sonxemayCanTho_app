@@ -18,8 +18,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
-  String _email = '';
-  String _role = '';
+  // String _email = '';
+  // String _role = '';
   String _createdAt = '';
   String _updatedAt = '';
   bool _isActive = true;
@@ -57,8 +57,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _fullNameController.text = data['fullName'] ?? '';
         _phoneController.text = data['phoneNumber'] ?? '';
         _addressController.text = data['address'] ?? '';
-        _email = data['emailAlias'] ?? currentUser.email ?? '';
-        _role = data['role'] ?? '';
+        // _email = data['emailAlias'] ?? currentUser.email ?? '';
+        // _role = data['role'] ?? '';
         _isActive = data['isActive'] ?? true;
         _createdAt = data['createdAt'] != null
             ? dateFormat.format((data['createdAt'] as Timestamp).toDate())
@@ -179,14 +179,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             color: const Color(0xFFC1473B),
                           ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildReadOnlyField('Email', _email, Icons.email_outlined),
-                    const SizedBox(height: 16),
-                    _buildReadOnlyField(
-                      'Vai trò',
-                      _role,
-                      Icons.assignment_ind_outlined,
-                    ),
+                    // const SizedBox(height: 16),
+                    // _buildReadOnlyField('Email', _email, Icons.email_outlined),
+                    // const SizedBox(height: 16),
+                    // _buildReadOnlyField(
+                    //   'Vai trò',
+                    //   _role,
+                    //   Icons.assignment_ind_outlined,
+                    // ),
                     const SizedBox(height: 16),
                     _buildReadOnlyField(
                       'Ngày tạo',

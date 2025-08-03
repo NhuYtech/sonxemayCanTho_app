@@ -1,8 +1,8 @@
+// lib/screens/order/order_content.dart
 import 'package:flutter/material.dart';
 import 'package:sonxemaycantho/screens/export_order/export_order.dart';
+import 'package:sonxemaycantho/screens/inventory/stock_order.dart';
 import 'package:sonxemaycantho/screens/order/order_list.dart';
-// Import OrderList screen
-// import 'package:sonxemaycantho/screens/order_list_screen.dart';
 
 class OrderContent extends StatelessWidget {
   const OrderContent({super.key});
@@ -35,7 +35,6 @@ class OrderContent extends StatelessWidget {
                   text: 'Đơn nhập',
                   color: Colors.lightBlue.shade50,
                   onTap: () {
-                    // CẬP NHẬT: Thay đổi OrderEntry thành OrderList
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -66,7 +65,12 @@ class OrderContent extends StatelessWidget {
                   text: 'Đơn tồn kho',
                   color: Colors.orange.shade50,
                   onTap: () {
-                    // TODO: Navigator.push to StockOrder
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StockOrder(),
+                      ),
+                    );
                     print('Đơn tồn kho tapped!');
                   },
                 ),

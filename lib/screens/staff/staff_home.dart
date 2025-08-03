@@ -22,7 +22,7 @@ class _StaffHomeState extends State<StaffHome> {
   // Ensure these are ALWAYS initialized with a non-null String
   String _totalImportOrders = 'Đang tải...';
   String _totalExportOrders = 'Đang tải...';
-  String _totalStockItems = 'Đang tải...';
+  String _totalStockOrders = 'Đang tải...'; // Renamed to reflect the change
 
   bool _isLoading = true;
 
@@ -40,7 +40,7 @@ class _StaffHomeState extends State<StaffHome> {
       _StaffDashboardContent(
         totalImportOrders: _totalImportOrders,
         totalExportOrders: _totalExportOrders,
-        totalStockItems: _totalStockItems,
+        totalStockOrders: _totalStockOrders, // Updated parameter
         isLoading: _isLoading,
       ),
       const OrderContent(),
@@ -56,7 +56,7 @@ class _StaffHomeState extends State<StaffHome> {
       _isLoading = true; // Set loading to true
       _totalImportOrders = 'Đang tải...'; // Reset values to loading state
       _totalExportOrders = 'Đang tải...';
-      _totalStockItems = 'Đang tải...';
+      _totalStockOrders = 'Đang tải...'; // Reset value
       _initializeScreens(); // Update screens to show loading states
     });
 
@@ -67,8 +67,8 @@ class _StaffHomeState extends State<StaffHome> {
       // Fetch Total Export Orders
       await _fetchTotalExportOrders();
 
-      // Fetch Total Stock Items
-      await _fetchTotalStockItems();
+      // Fetch Total Stock Orders
+      await _fetchTotalStockOrders(); // Updated function call
 
       if (mounted) {
         setState(() {
@@ -83,7 +83,7 @@ class _StaffHomeState extends State<StaffHome> {
         setState(() {
           _totalImportOrders = 'Lỗi tải dữ liệu';
           _totalExportOrders = 'Lỗi tải dữ liệu';
-          _totalStockItems = 'Lỗi tải dữ liệu';
+          _totalStockOrders = 'Lỗi tải dữ liệu'; // Updated value
           _isLoading = false;
           _initializeScreens(); // Re-initialize screens to show error states
         });
@@ -241,66 +241,40 @@ class _StaffHomeState extends State<StaffHome> {
     }
   }
 
-  // New function to fetch total items in stock (sum of quantities from 'parts' or 'products')
-  Future<void> _fetchTotalStockItems() async {
+  // CẬP NHẬT: Hàm mới để tính tổng số đơn tồn kho
+  Future<void> _fetchTotalStockOrders() async {
+    print('🔍 Bắt đầu fetch tổng đơn tồn kho...');
     try {
-      print('🔍 Bắt đầu fetch dữ liệu tổng tồn kho...');
-      int totalItems = 0;
-      List<String> possibleCollections = [
-        'parts',
-        'products',
-        'inventory',
-      ]; // Common collections for stock
+      int totalStockOrders = 0;
+      final stockStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
 
-      // Flag to indicate if any stock data was found and processed
-      for (String collectionName in possibleCollections) {
-        try {
-          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-              .collection(collectionName)
-              .get();
+      // Lấy các đơn hàng có trạng thái tồn kho
+      final QuerySnapshot stockOrdersSnapshot = await FirebaseFirestore.instance
+          .collection('serviceOrders')
+          .where('status', whereIn: stockStatuses)
+          .get();
 
-          if (querySnapshot.docs.isNotEmpty) {
-            for (var doc in querySnapshot.docs) {
-              var data = doc.data() as Map<String, dynamic>;
-              // Try to find a quantity-like field
-              int itemQuantity = 0;
-              if (data.containsKey('quantity')) {
-                itemQuantity = (data['quantity'] as num?)?.toInt() ?? 0;
-              } else if (data.containsKey('stock')) {
-                itemQuantity = (data['stock'] as num?)?.toInt() ?? 0;
-              } else if (data.containsKey('amount')) {
-                itemQuantity = (data['amount'] as num?)?.toInt() ?? 0;
-              }
-              totalItems += itemQuantity;
-            }
-            // If we found any documents in a collection, consider it found and stop
-            // Even if totalItems is 0, it means we checked this collection and it's empty or has no quantity
-            // This prevents iterating through unnecessary collections if a primary one is found
-            if (querySnapshot.docs.isNotEmpty) {
-              print(
-                '✅ Tổng số $totalItems mặt hàng tồn kho từ $collectionName',
-              );
-              break; // Assuming one collection holds the primary stock data
-            }
-          }
-        } catch (e) {
-          print(
-            '❌ Lỗi khi truy cập collection $collectionName để lấy tồn kho: $e',
-          );
-        }
+      // Đếm số lượng đơn hàng
+      totalStockOrders = stockOrdersSnapshot.docs.length;
+
+      if (stockOrdersSnapshot.docs.isEmpty) {
+        print('✅ Không có đơn hàng tồn kho nào.');
+      } else {
+        print('✅ Hoàn thành tính tổng đơn tồn kho. Tổng số: $totalStockOrders');
       }
 
       if (mounted) {
         setState(() {
-          _totalStockItems = '$totalItems sản phẩm';
+          // Fix: Ensure a non-null string is always assigned.
+          _totalStockOrders = '$totalStockOrders đơn';
         });
-        print('🎯 Cập nhật UI: Tổng tồn kho: $_totalStockItems');
+        print('🎯 Cập nhật UI: Tổng đơn tồn kho: $_totalStockOrders');
       }
     } catch (e) {
-      print('💥 Lỗi khi fetch tổng tồn kho: $e');
+      print('💥 Lỗi khi fetch tổng đơn tồn kho: $e');
       if (mounted) {
         setState(() {
-          _totalStockItems = 'Lỗi tải';
+          _totalStockOrders = 'Lỗi tải';
         });
       }
     }
@@ -311,7 +285,7 @@ class _StaffHomeState extends State<StaffHome> {
       _isLoading = true;
       _totalImportOrders = 'Đang tải...';
       _totalExportOrders = 'Đang tải...';
-      _totalStockItems = 'Đang tải...';
+      _totalStockOrders = 'Đang tải...'; // Updated variable
       _initializeScreens(); // Re-initialize screens to show loading state on refresh
     });
     _fetchDashboardData();
@@ -375,13 +349,14 @@ class _StaffDashboardContent extends StatelessWidget {
   // Ensure these parameters are consistently named and non-null
   final String totalImportOrders;
   final String totalExportOrders;
-  final String totalStockItems;
+  final String totalStockOrders; // Updated parameter
+
   final bool isLoading;
 
   const _StaffDashboardContent({
     required this.totalImportOrders,
     required this.totalExportOrders,
-    required this.totalStockItems,
+    required this.totalStockOrders, // Updated parameter
     this.isLoading =
         false, // Default to false if not provided, but it's usually provided by parent
   });
@@ -406,11 +381,11 @@ class _StaffDashboardContent extends StatelessWidget {
           showLoading: isLoading && totalExportOrders == 'Đang tải...',
         ),
         _buildStatCard(
-          'Tổng tồn kho:', // Changed from 'Tổn đơn tồn kho' to 'Tổng tồn kho' for clarity
-          totalStockItems,
+          'Tổng tồn kho:',
+          totalStockOrders, // Updated variable
           Icons.inventory_2,
           const Color(0xFFFFEBEE),
-          showLoading: isLoading && totalStockItems == 'Đang tải...',
+          showLoading: isLoading && totalStockOrders == 'Đang tải...',
         ),
       ],
     );
