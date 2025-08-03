@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sonxemaycantho/models/service_order.dart';
 
 class OrderEntry extends StatefulWidget {
-  const OrderEntry({super.key});
+  final ServiceOrder? orderToEdit; // Thêm parameter để hỗ trợ chỉnh sửa
+
+  const OrderEntry({super.key, this.orderToEdit});
 
   @override
   State<OrderEntry> createState() => _OrderEntryState();
@@ -20,6 +22,8 @@ class _OrderEntryState extends State<OrderEntry> {
   List<ServiceOrderItem> _orderItems = [];
 
   bool _isLoading = false;
+  bool _isEditMode = false; // Để theo dõi chế độ chỉnh sửa
+  String _selectedStatus = 'Đã nhận'; // Trạng thái được chọn
 
   final List<String> _carModels = [
     'Vision',
@@ -32,12 +36,71 @@ class _OrderEntryState extends State<OrderEntry> {
     'SH Mode',
   ];
 
+  // Danh sách trạng thái đơn hàng
+  final List<String> _orderStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
+
   @override
   void initState() {
     super.initState();
-    _orderItems.add(
-      ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
-    );
+
+    // Kiểm tra xem có phải chế độ chỉnh sửa không
+    _isEditMode = widget.orderToEdit != null;
+
+    if (_isEditMode) {
+      // Chế độ chỉnh sửa - load dữ liệu từ orderToEdit
+      _selectedStatus = widget.orderToEdit!.status;
+      _loadOrderData();
+    } else {
+      // Chế độ tạo mới - thêm item mặc định
+      _orderItems.add(
+        ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
+      );
+    }
+  }
+
+  // Load dữ liệu từ order để chỉnh sửa
+  Future<void> _loadOrderData() async {
+    final order = widget.orderToEdit!;
+    _storeNameController.text = order.storeName;
+    _generalNoteController.text = order.note ?? '';
+
+    // Load order items từ Firestore
+    try {
+      final QuerySnapshot itemsSnapshot = await _firestore
+          .collection('serviceOrderItems')
+          .where('serviceOrderId', isEqualTo: order.id)
+          .get();
+
+      if (itemsSnapshot.docs.isNotEmpty) {
+        setState(() {
+          _orderItems = itemsSnapshot.docs.map((doc) {
+            return ServiceOrderItem.fromMap(
+              doc.data() as Map<String, dynamic>,
+              doc.id,
+            );
+          }).toList();
+        });
+      } else {
+        // Nếu không có items, thêm một item mặc định
+        setState(() {
+          _orderItems.add(
+            ServiceOrderItem(
+              carModel: _carModels.first,
+              quantity: 0,
+              color: '',
+            ),
+          );
+        });
+      }
+    } catch (e) {
+      print('Lỗi khi load dữ liệu order items: $e');
+      // Thêm item mặc định nếu có lỗi
+      setState(() {
+        _orderItems.add(
+          ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
+        );
+      });
+    }
   }
 
   @override
@@ -61,6 +124,38 @@ class _OrderEntryState extends State<OrderEntry> {
     });
   }
 
+  // Cập nhật chỉ trạng thái đơn hàng
+  Future<void> _updateOrderStatus() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final order = widget.orderToEdit!;
+
+      await _firestore.collection('serviceOrders').doc(order.id).update({
+        'status': _selectedStatus,
+      });
+
+      _showConfirmationDialog(
+        title: 'Cập nhật trạng thái thành công!',
+        content: 'Trạng thái đơn hàng đã được cập nhật thành: $_selectedStatus',
+        isSuccess: true,
+      );
+    } catch (e) {
+      print('Lỗi khi cập nhật trạng thái: $e');
+      _showConfirmationDialog(
+        title: 'Lỗi!',
+        content: 'Đã xảy ra lỗi khi cập nhật trạng thái. Vui lòng thử lại.',
+        isSuccess: false,
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _submitOrder() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -73,43 +168,19 @@ class _OrderEntryState extends State<OrderEntry> {
     });
 
     try {
-      final newOrder = ServiceOrder(
-        storeName: _storeNameController.text.trim(),
-        createDate: DateTime.now(),
-        note: _generalNoteController.text.trim().isEmpty
-            ? null
-            : _generalNoteController.text.trim(),
-        status: 'Chưa kiểm',
-      );
-
-      DocumentReference orderRef = await _firestore
-          .collection('serviceOrders')
-          .add(newOrder.toMap());
-      newOrder.id = orderRef.id;
-
-      for (var item in _orderItems) {
-        item.serviceOrderId = newOrder.id;
-        await _firestore.collection('serviceOrderItems').add(item.toMap());
+      if (_isEditMode) {
+        // Chế độ chỉnh sửa
+        await _updateOrder();
+      } else {
+        // Chế độ tạo mới
+        await _createOrder();
       }
-
-      _showConfirmationDialog(
-        title: 'Tạo đơn hàng thành công!',
-        content: 'Đơn hàng của bạn đã được ghi nhận vào hệ thống.',
-        isSuccess: true,
-      );
-
-      _storeNameController.clear();
-      _generalNoteController.clear();
-      setState(() {
-        _orderItems = [
-          ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
-        ];
-      });
     } catch (e) {
-      print('Lỗi khi tạo đơn hàng: $e');
+      print('Lỗi khi ${_isEditMode ? 'cập nhật' : 'tạo'} đơn hàng: $e');
       _showConfirmationDialog(
         title: 'Lỗi!',
-        content: 'Đã xảy ra lỗi khi tạo đơn hàng. Vui lòng thử lại. Lỗi: $e',
+        content:
+            'Đã xảy ra lỗi khi ${_isEditMode ? 'cập nhật' : 'tạo'} đơn hàng. Vui lòng thử lại. Lỗi: $e',
         isSuccess: false,
       );
     } finally {
@@ -117,6 +188,84 @@ class _OrderEntryState extends State<OrderEntry> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _createOrder() async {
+    final newOrder = ServiceOrder(
+      storeName: _storeNameController.text.trim(),
+      createDate: DateTime.now(),
+      note: _generalNoteController.text.trim().isEmpty
+          ? null
+          : _generalNoteController.text.trim(),
+      status: _selectedStatus,
+    );
+
+    DocumentReference orderRef = await _firestore
+        .collection('serviceOrders')
+        .add(newOrder.toMap());
+    newOrder.id = orderRef.id;
+
+    for (var item in _orderItems) {
+      item.serviceOrderId = newOrder.id;
+      await _firestore.collection('serviceOrderItems').add(item.toMap());
+    }
+
+    _showConfirmationDialog(
+      title: 'Tạo đơn hàng thành công!',
+      content: 'Đơn hàng của bạn đã được ghi nhận vào hệ thống.',
+      isSuccess: true,
+    );
+
+    _storeNameController.clear();
+    _generalNoteController.clear();
+    setState(() {
+      _selectedStatus = 'Đã nhận';
+      _orderItems = [
+        ServiceOrderItem(carModel: _carModels.first, quantity: 0, color: ''),
+      ];
+    });
+  }
+
+  Future<void> _updateOrder() async {
+    final order = widget.orderToEdit!;
+
+    // Cập nhật thông tin order
+    final updatedOrder = ServiceOrder(
+      id: order.id,
+      storeName: _storeNameController.text.trim(),
+      createDate: order.createDate, // Giữ nguyên ngày tạo
+      note: _generalNoteController.text.trim().isEmpty
+          ? null
+          : _generalNoteController.text.trim(),
+      status: _selectedStatus, // Cập nhật trạng thái mới
+    );
+
+    await _firestore
+        .collection('serviceOrders')
+        .doc(order.id)
+        .update(updatedOrder.toMap());
+
+    // Xóa các order items cũ
+    final existingItemsSnapshot = await _firestore
+        .collection('serviceOrderItems')
+        .where('serviceOrderId', isEqualTo: order.id)
+        .get();
+
+    for (var doc in existingItemsSnapshot.docs) {
+      await doc.reference.delete();
+    }
+
+    // Thêm các order items mới
+    for (var item in _orderItems) {
+      item.serviceOrderId = order.id;
+      await _firestore.collection('serviceOrderItems').add(item.toMap());
+    }
+
+    _showConfirmationDialog(
+      title: 'Cập nhật đơn hàng thành công!',
+      content: 'Thông tin đơn hàng đã được cập nhật.',
+      isSuccess: true,
+    );
   }
 
   void _showConfirmationDialog({
@@ -134,7 +283,10 @@ class _OrderEntryState extends State<OrderEntry> {
             TextButton(
               child: const Text('OK'),
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Đóng dialog
+                if (isSuccess) {
+                  Navigator.of(context).pop(); // Quay lại màn hình trước
+                }
               },
             ),
           ],
@@ -143,13 +295,27 @@ class _OrderEntryState extends State<OrderEntry> {
     );
   }
 
+  // Widget hiển thị màu sắc theo trạng thái
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Đã nhận':
+        return Colors.blue;
+      case 'Đang sơn':
+        return Colors.orange;
+      case 'Đã sơn xong':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Tạo Đơn Nhập',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          _isEditMode ? 'Chỉnh sửa đơn nhập' : 'Tạo đơn nhập',
+          style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFFC1473B),
         iconTheme: const IconThemeData(color: Colors.white),
@@ -189,6 +355,44 @@ class _OrderEntryState extends State<OrderEntry> {
                       },
                     ),
                     const SizedBox(height: 16),
+
+                    // Dropdown chọn trạng thái
+                    DropdownButtonFormField<String>(
+                      value: _selectedStatus,
+                      decoration: InputDecoration(
+                        labelText: 'Trạng thái đơn hàng',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.assignment_turned_in,
+                          color: _getStatusColor(_selectedStatus),
+                        ),
+                      ),
+                      items: _orderStatuses.map((String status) {
+                        return DropdownMenuItem<String>(
+                          value: status,
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                size: 16,
+                                color: _getStatusColor(status),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(status),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _selectedStatus = newValue!;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     TextFormField(
                       controller: _generalNoteController,
                       maxLines: 3,
@@ -367,6 +571,30 @@ class _OrderEntryState extends State<OrderEntry> {
                     ),
                     const SizedBox(height: 24),
 
+                    // Hiển thị nút cập nhật trạng thái nếu ở chế độ chỉnh sửa
+                    if (_isEditMode) ...[
+                      Center(
+                        child: ElevatedButton.icon(
+                          onPressed: _updateOrderStatus,
+                          icon: const Icon(Icons.update),
+                          label: const Text('Cập Nhật Trạng Thái'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _getStatusColor(_selectedStatus),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 30,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            elevation: 3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     Center(
                       child: ElevatedButton(
                         onPressed: _submitOrder,
@@ -382,9 +610,9 @@ class _OrderEntryState extends State<OrderEntry> {
                           ),
                           elevation: 5,
                         ),
-                        child: const Text(
-                          'Tạo Đơn Hàng',
-                          style: TextStyle(
+                        child: Text(
+                          _isEditMode ? 'Cập Nhật Đơn Hàng' : 'Tạo Đơn Hàng',
+                          style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),

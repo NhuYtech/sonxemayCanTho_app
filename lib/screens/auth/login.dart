@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../customer/customer_home.dart';
 import '../manager/manager_home.dart';
 import '../staff/staff_home.dart';
-import '../register.dart';
+import 'register.dart';
 import '../../services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 

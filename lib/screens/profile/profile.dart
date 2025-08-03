@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sonxemaycantho/screens/profile/view_profile.dart';
 import 'package:sonxemaycantho/services/auth_service.dart';
-import 'package:sonxemaycantho/screens/role.dart';
+import 'package:sonxemaycantho/screens/auth/role.dart';
 
 class Profile extends StatelessWidget {
   final String name;

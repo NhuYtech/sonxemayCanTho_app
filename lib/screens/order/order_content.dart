@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:sonxemaycantho/screens/export_order.dart';
-import 'package:sonxemaycantho/screens/order/order_entry.dart';
+import 'package:sonxemaycantho/screens/export_order/export_order.dart';
+import 'package:sonxemaycantho/screens/order/order_list.dart';
+// Import OrderList screen
+// import 'package:sonxemaycantho/screens/order_list_screen.dart';
 
 class OrderContent extends StatelessWidget {
   const OrderContent({super.key});
@@ -23,7 +25,6 @@ class OrderContent extends StatelessWidget {
               ),
             ),
           ),
-
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -34,10 +35,11 @@ class OrderContent extends StatelessWidget {
                   text: 'Đơn nhập',
                   color: Colors.lightBlue.shade50,
                   onTap: () {
+                    // CẬP NHẬT: Thay đổi OrderEntry thành OrderList
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const OrderEntry(),
+                        builder: (context) => const OrderList(),
                       ),
                     );
                     print('Đơn nhập tapped!');
@@ -68,16 +70,6 @@ class OrderContent extends StatelessWidget {
                     print('Đơn tồn kho tapped!');
                   },
                 ),
-                // _buildFunctionTile(
-                //   context,
-                //   icon: Icons.broken_image_outlined,
-                //   text: 'Đơn bị hư hỏng',
-                //   color: Colors.red.shade50, // Keep tile background color
-                //   onTap: () {
-                //     // TODO: Navigator.push to BrokenOrder
-                //     print('Đơn bị hư hỏng tapped!');
-                //   },
-                // ),
                 const SizedBox(height: 20),
               ],
             ),

@@ -1,8 +1,10 @@
-// lib/screens/order_list_screen.dart
+// lib/screens/order/order_list.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import '../../models/service_order.dart'; // Import ServiceOrder model
+import 'order_entry.dart'; // Import màn hình OrderEntry để thêm mới
+import 'edit_order.dart'; // Import màn hình EditOrder để chỉnh sửa
 
 class OrderList extends StatefulWidget {
   const OrderList({super.key});
@@ -14,12 +16,76 @@ class OrderList extends StatefulWidget {
 class _OrderListState extends State<OrderList> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Hiển thị chi tiết của một đơn nhập trong một hộp thoại.
+  void _showOrderDetail(ServiceOrder order) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Chi Tiết Đơn Nhập'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDetailRow('Mã đơn hàng', order.id!),
+                _buildDetailRow(
+                  'Ngày gửi',
+                  DateFormat('dd/MM/yyyy HH:mm').format(order.createDate),
+                ),
+                _buildDetailRow('Cửa hàng', order.storeName),
+                _buildDetailRow('Trạng thái', order.status),
+                _buildDetailRow('Ghi chú chung', order.note ?? 'Không có'),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Điều hướng đến màn hình EditOrder để chỉnh sửa đơn hàng đã chọn.
+  void _editOrder(ServiceOrder order) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        // Chuyển đối tượng ServiceOrder sang màn hình EditOrder
+        builder: (context) => EditOrder(serviceOrder: order),
+      ),
+    );
+  }
+
+  // A helper method to build a detail row with a label and value.
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 16, color: Colors.black87),
+          children: [
+            TextSpan(
+              text: '$label: ',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Danh Sách Đơn Nhập',
+          'Danh sách đơn nhập',
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color(0xFFC1473B),
@@ -56,6 +122,26 @@ class _OrderListState extends State<OrderList> {
             itemCount: orders.length,
             itemBuilder: (context, index) {
               final order = orders[index];
+
+              // Xác định màu sắc cho trạng thái
+              Color statusColor;
+              switch (order.status) {
+                case 'Đã nhận':
+                  statusColor = Colors.orange;
+                  break;
+                case 'Đang sơn':
+                  statusColor = Colors.blue;
+                  break;
+                case 'Đã sơn xong':
+                  statusColor = Colors.green;
+                  break;
+                case 'Đã hoàn thành': // Trạng thái mới
+                  statusColor = Colors.deepPurple;
+                  break;
+                default:
+                  statusColor = Colors.grey;
+              }
+
               return Card(
                 elevation: 4,
                 margin: const EdgeInsets.only(bottom: 16.0),
@@ -65,9 +151,8 @@ class _OrderListState extends State<OrderList> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(15),
                   onTap: () {
-                    // TODO: Navigate to Order Detail Screen
-                    print('Xem chi tiết đơn hàng: ${order.id}');
-                    // Example: Navigator.push(context, MaterialPageRoute(builder: (context) => OrderDetailScreen(orderId: order.id!)));
+                    // Hiển thị chi tiết đơn hàng khi nhấn vào card
+                    _showOrderDetail(order);
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -95,9 +180,7 @@ class _OrderListState extends State<OrderList> {
                           'Trạng thái: ${order.status}',
                           style: TextStyle(
                             fontSize: 14,
-                            color: order.status == 'Chưa kiểm'
-                                ? Colors.orange
-                                : Colors.green,
+                            color: statusColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -115,20 +198,35 @@ class _OrderListState extends State<OrderList> {
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.bottomRight,
-                          child: TextButton(
-                            onPressed: () {
-                              // TODO: Implement navigation to detail screen
-                              print(
-                                'Button Xem chi tiết cho đơn hàng: ${order.id}',
-                              );
-                            },
-                            child: const Text(
-                              'Xem chi tiết',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextButton(
+                                onPressed: () {
+                                  _showOrderDetail(order);
+                                },
+                                child: const Text(
+                                  'Xem chi tiết',
+                                  style: TextStyle(
+                                    color: Color(0xFFC1473B),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: () {
+                                  _editOrder(order);
+                                },
+                                child: const Text(
+                                  'Chỉnh sửa',
+                                  style: TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -139,6 +237,21 @@ class _OrderListState extends State<OrderList> {
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Điều hướng đến màn hình OrderEntry để thêm mới đơn hàng
+          Navigator.push(
+            context,
+            // Truyền null cho orderToEdit để báo hiệu là thêm mới
+            MaterialPageRoute(
+              builder: (context) => const OrderEntry(orderToEdit: null),
+            ),
+          );
+        },
+        backgroundColor: const Color(0xFFC1473B),
+        foregroundColor: Colors.white,
+        child: const Icon(Icons.add),
       ),
     );
   }

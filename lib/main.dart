@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import 'package:sonxemaycantho/screens/role.dart';
+import 'package:sonxemaycantho/screens/auth/role.dart';
 import 'widgets/firebase_options.dart';
 
 import 'screens/customer/customer_home.dart';

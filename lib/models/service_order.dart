@@ -7,14 +7,14 @@ class ServiceOrder {
   final String storeName;
   final DateTime createDate;
   final String? note; // General note for the entire order
-  String status; // e.g., 'Chưa kiểm', 'Đã kiểm', 'Hoàn tất'
+  String status; // e.g., 'Đã nhận', 'Đang sơn', 'Đã gửi'
 
   ServiceOrder({
     this.id,
     required this.storeName,
     required this.createDate,
     this.note,
-    this.status = 'Chưa kiểm', // Default status
+    this.status = 'Đã nhận', // Cập nhật: Trạng thái mặc định là 'Đã nhận'
   });
 
   // Factory constructor to create a ServiceOrder from a Map (e.g., from Firestore)
@@ -22,8 +22,7 @@ class ServiceOrder {
     return ServiceOrder(
       id: id,
       storeName: data['storeName'] as String,
-      createDate: (data['createDate'] as Timestamp)
-          .toDate(), // Use Firestore Timestamp
+      createDate: (data['createDate'] as Timestamp).toDate(),
       note: data['note'] as String?,
       status: data['status'] as String,
     );
@@ -33,9 +32,7 @@ class ServiceOrder {
   Map<String, dynamic> toMap() {
     return {
       'storeName': storeName,
-      'createDate': Timestamp.fromDate(
-        createDate,
-      ), // Convert DateTime to Firestore Timestamp
+      'createDate': Timestamp.fromDate(createDate),
       'note': note,
       'status': status,
     };
@@ -48,7 +45,7 @@ class ServiceOrderItem {
   String? serviceOrderId; // Link to the parent ServiceOrder
   String carModel;
   int quantity;
-  String color; // Added: Color of the car model
+  String color;
   String? note; // Specific note for this car model/quantity
 
   ServiceOrderItem({
@@ -56,7 +53,7 @@ class ServiceOrderItem {
     this.serviceOrderId,
     required this.carModel,
     required this.quantity,
-    required this.color, // Added: Color is now required
+    required this.color,
     this.note,
   });
 
@@ -67,7 +64,7 @@ class ServiceOrderItem {
       serviceOrderId: data['serviceOrderId'] as String?,
       carModel: data['carModel'] as String,
       quantity: data['quantity'] as int,
-      color: data['color'] as String, // Added: Read color from map
+      color: data['color'] as String,
       note: data['note'] as String?,
     );
   }
@@ -78,7 +75,7 @@ class ServiceOrderItem {
       'serviceOrderId': serviceOrderId,
       'carModel': carModel,
       'quantity': quantity,
-      'color': color, // Added: Write color to map
+      'color': color,
       'note': note,
     };
   }
