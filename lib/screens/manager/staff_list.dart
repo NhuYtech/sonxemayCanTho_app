@@ -27,11 +27,13 @@ class _StaffListState extends State<StaffList> {
     });
 
     try {
-      // Lấy tất cả người dùng từ collection 'users'
-      final snapshot = await _firestore.collection('users').get();
+      // Sửa lỗi: Lọc danh sách người dùng có trường 'role' là 'staff'
+      final snapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'staff') // Dòng này đã được thêm vào
+          .get();
 
-      // Lọc ra danh sách nhân viên (ví dụ: dựa trên trường 'role')
-      // Bạn cần thay thế logic này bằng cách kiểm tra vai trò cụ thể
+      // Lấy danh sách dữ liệu từ các document đã được lọc
       final staffList = snapshot.docs.map((doc) => doc.data()).toList();
 
       setState(() {
@@ -39,13 +41,17 @@ class _StaffListState extends State<StaffList> {
       });
     } catch (e) {
       print('Error fetching staff list: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi tải danh sách nhân viên: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi tải danh sách nhân viên: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -92,7 +98,7 @@ class _StaffListState extends State<StaffList> {
               backgroundImage:
                   staff['avatarURL'] != null &&
                       staff['avatarURL'].toString().isNotEmpty
-                  ? NetworkImage(staff['avatarURL'])
+                  ? NetworkImage(staff['avatarURL']) as ImageProvider<Object>?
                   : null,
               child:
                   (staff['avatarURL'] == null ||
@@ -131,7 +137,6 @@ class _StaffListState extends State<StaffList> {
                 ],
               ),
             ),
-            // Bạn có thể thêm các widget khác như nút gọi, nhắn tin, ... tại đây
           ],
         ),
       ),

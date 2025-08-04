@@ -28,6 +28,18 @@ class ServiceOrder {
     );
   }
 
+  // Factory method to create a ServiceOrder from Firestore document
+  factory ServiceOrder.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return ServiceOrder(
+      id: doc.id,
+      storeName: data['storeName'] ?? '',
+      createDate: (data['createDate'] as Timestamp).toDate(),
+      note: data['note'],
+      status: data['status'] ?? 'Đã nhận',
+    );
+  }
+
   // Convert ServiceOrder to a Map for saving to Firestore
   Map<String, dynamic> toMap() {
     return {

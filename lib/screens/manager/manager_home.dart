@@ -37,6 +37,7 @@ class _ManagerHomeState extends State<ManagerHome> {
   }
 
   // Khởi tạo các màn hình với dữ liệu ban đầu
+  // Màn hình Dashboard sẽ được cập nhật dữ liệu khi fetch xong
   void _initializeScreens() {
     _screens = [
       Dashboard(
@@ -54,11 +55,12 @@ class _ManagerHomeState extends State<ManagerHome> {
     ];
   }
 
-  // Hàm chính để lấy tất cả dữ liệu
+  // Hàm chính để lấy tất cả dữ liệu từ Firestore và cập nhật UI
   void _fetchDashboardData() async {
-    // Luôn kiểm tra `mounted` trước khi gọi setState
+    // Ngăn không cho gọi setState nếu widget đã bị hủy
     if (!mounted) return;
 
+    // Hiển thị trạng thái đang tải
     setState(() {
       _isLoading = true;
       _revenue = 'Đang tải...';
@@ -67,13 +69,14 @@ class _ManagerHomeState extends State<ManagerHome> {
       _damagedItems = 'Đang tải...';
       _customerCount = 'Đang tải...';
       _staffCount = 'Đang tải...';
-      _initializeScreens();
+      _initializeScreens(); // Khởi tạo lại màn hình với dữ liệu "đang tải"
     });
 
     try {
-      // Chạy các tác vụ lấy dữ liệu song song
+      // Chạy các tác vụ lấy dữ liệu song song để tối ưu hiệu suất
       await Future.wait([_fetchStockQuantity(), _fetchOtherData()]);
 
+      // Cập nhật giao diện sau khi tất cả dữ liệu đã được lấy
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -90,6 +93,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
     } catch (e) {
+      // Xử lý lỗi nếu có bất kỳ lỗi nào xảy ra trong quá trình fetch
       if (mounted) {
         print('💥 Error fetching dashboard data: $e');
         setState(() {
@@ -100,6 +104,7 @@ class _ManagerHomeState extends State<ManagerHome> {
           _customerCount = 'Lỗi tải dữ liệu';
           _staffCount = 'Lỗi tải dữ liệu';
           _isLoading = false;
+          // Cập nhật màn hình dashboard với thông báo lỗi
           _screens[0] = Dashboard(
             revenue: _revenue,
             totalOrders: _totalOrders,
@@ -114,8 +119,8 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
+  // Lấy số lượng đơn nhập kho từ các collection có thể có
   Future<void> _fetchStockQuantity() async {
-    // ... (Giữ nguyên logic của bạn, chỉ thêm if (mounted) trước setState)
     try {
       List<String> possibleCollections = [
         'serviceOrders',
@@ -139,10 +144,9 @@ class _ManagerHomeState extends State<ManagerHome> {
               .get();
 
           if (querySnapshot.docs.isNotEmpty) {
-            // Giả định logic của bạn hoạt động và tìm được đơn nhập
             totalImportOrders = querySnapshot.docs.length;
             found = true;
-            break;
+            break; // Dừng lại sau khi tìm thấy collection đầu tiên có dữ liệu
           }
         } catch (e) {
           // Bỏ qua lỗi và thử collection khác
@@ -160,7 +164,7 @@ class _ManagerHomeState extends State<ManagerHome> {
       }
     } catch (e) {
       if (mounted) {
-        print('💥 Error: $e');
+        print('💥 Error fetching stock quantity: $e');
         setState(() {
           _stockQuantity = 'Lỗi: ${e.toString()}';
         });
@@ -168,25 +172,25 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
+  // Lấy các dữ liệu khác bao gồm doanh thu, đơn xuất, sản phẩm hỏng, khách hàng và nhân viên
   Future<void> _fetchOtherData() async {
-    // ... (Giữ nguyên logic của bạn, chỉ thêm if (mounted) trước setState)
     try {
-      // Fetch totalOrders
+      // 1. Lấy số lượng đơn xuất và tính toán doanh thu
       QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
           .collection('exportOrders')
           .get();
+
       if (mounted) {
         setState(() {
           _totalOrders = '${exportOrdersSnapshot.docs.length} đơn xuất';
         });
       }
 
-      // Calculate revenue
       double totalRevenue = 0;
       for (var doc in exportOrdersSnapshot.docs) {
         var data = doc.data() as Map<String, dynamic>;
         int quantity = (data['quantity'] as num?)?.toInt() ?? 0;
-        double itemPrice = 100000;
+        double itemPrice = 100000; // Giá sản phẩm cố định
         totalRevenue += (quantity * itemPrice);
       }
       if (mounted) {
@@ -196,7 +200,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
 
-      // Fetch damagedItems
+      // 2. Lấy số lượng sản phẩm hỏng
       QuerySnapshot damagedItemsSnapshot = await FirebaseFirestore.instance
           .collection('damagedItems')
           .get();
@@ -214,7 +218,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
 
-      // Fetch customer count
+      // 3. Lấy số lượng khách hàng
       try {
         QuerySnapshot customersSnapshot = await FirebaseFirestore.instance
             .collection('customers')
@@ -235,10 +239,13 @@ class _ManagerHomeState extends State<ManagerHome> {
         }
       }
 
-      // Fetch staff count
+      // 4. Lấy số lượng nhân viên bằng cách lọc theo vai trò
       QuerySnapshot staffSnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where('role', isEqualTo: 'staff')
+          .where(
+            'role',
+            isEqualTo: 'staff',
+          ) // Lọc những người có vai trò là "staff"
           .get();
       if (mounted) {
         setState(() {
@@ -259,13 +266,13 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
+  // Hàm làm mới dữ liệu
   void _refreshData() {
     _fetchDashboardData();
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (Giữ nguyên build method)
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: Header(name: widget.name),
