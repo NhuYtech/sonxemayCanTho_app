@@ -27,12 +27,12 @@ class Dashboard extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
-        _buildStatCard(
-          'Doanh thu:',
-          revenue,
-          Icons.bar_chart,
-          const Color(0xFFE3F2FD),
-        ),
+        // _buildStatCard(
+        //   'Doanh thu:',
+        //   revenue,
+        //   Icons.bar_chart,
+        //   const Color(0xFFE3F2FD),
+        // ),
         _buildStatCard(
           'Tổng đơn nhập:',
           stockQuantity,

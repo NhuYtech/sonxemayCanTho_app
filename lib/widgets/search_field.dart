@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class SearchField extends StatelessWidget {
   final String hintText;
   final Function(String)? onSearch;
+  final TextEditingController? controller; // Thêm controller
 
   const SearchField({
-    super.key, 
-    this.hintText = 'Tìm kiếm...', 
+    super.key,
+    this.hintText = 'Tìm kiếm...',
     this.onSearch,
+    this.controller, // Khai báo controller
   });
 
   @override
@@ -27,6 +29,7 @@ class SearchField extends StatelessWidget {
         ],
       ),
       child: TextFormField(
+        controller: controller, // Gán controller vào TextFormField
         onChanged: onSearch,
         decoration: InputDecoration(
           hintText: hintText,
@@ -35,7 +38,10 @@ class SearchField extends StatelessWidget {
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
       ),
     );

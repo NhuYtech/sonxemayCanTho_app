@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sonxemaycantho/screens/manager/edit_staff.dart';
 
 class StaffList extends StatefulWidget {
   const StaffList({super.key});
@@ -22,23 +23,24 @@ class _StaffListState extends State<StaffList> {
   }
 
   Future<void> _fetchStaffs() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Sửa lỗi: Lọc danh sách người dùng có trường 'role' là 'staff'
       final snapshot = await _firestore
           .collection('users')
-          .where('role', isEqualTo: 'staff') // Dòng này đã được thêm vào
+          .where('role', isEqualTo: 'staff')
           .get();
 
-      // Lấy danh sách dữ liệu từ các document đã được lọc
       final staffList = snapshot.docs.map((doc) => doc.data()).toList();
 
-      setState(() {
-        _staffs = staffList;
-      });
+      if (mounted) {
+        setState(() {
+          _staffs = staffList;
+        });
+      }
     } catch (e) {
       print('Error fetching staff list: $e');
       if (mounted) {
@@ -53,6 +55,53 @@ class _StaffListState extends State<StaffList> {
         });
       }
     }
+  }
+
+  void _showStaffDetails(Map<String, dynamic> staff) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Thông tin chi tiết'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Tên: ${staff['fullName'] ?? 'Chưa cập nhật'}'),
+                Text(
+                  'Email: ${staff['emailAlias'] ?? staff['email'] ?? 'Chưa cập nhật'}',
+                ),
+                Text(
+                  'Số điện thoại: ${staff['phoneNumber'] ?? 'Chưa cập nhật'}',
+                ),
+                Text('Địa chỉ: ${staff['address'] ?? 'Chưa cập nhật'}'),
+                Text(
+                  'Trạng thái: ${staff['isActive'] ?? true ? 'Đang hoạt động' : 'Tạm khóa'}',
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Đóng'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editStaff(Map<String, dynamic> staff) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => EditStaff(staff: staff)))
+        .then((result) {
+          // Khi trở về từ màn hình chỉnh sửa, làm mới danh sách
+          if (result == true) {
+            _fetchStaffs();
+          }
+        });
   }
 
   @override
@@ -90,52 +139,80 @@ class _StaffListState extends State<StaffList> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
           children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage:
-                  staff['avatarURL'] != null &&
-                      staff['avatarURL'].toString().isNotEmpty
-                  ? NetworkImage(staff['avatarURL']) as ImageProvider<Object>?
-                  : null,
-              child:
-                  (staff['avatarURL'] == null ||
-                      staff['avatarURL'].toString().isEmpty)
-                  ? const Icon(Icons.person, size: 30, color: Colors.grey)
-                  : null,
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.grey.shade200,
+                  backgroundImage:
+                      staff['avatarURL'] != null &&
+                          staff['avatarURL'].toString().isNotEmpty
+                      ? NetworkImage(staff['avatarURL'])
+                            as ImageProvider<Object>?
+                      : null,
+                  child:
+                      (staff['avatarURL'] == null ||
+                          staff['avatarURL'].toString().isEmpty)
+                      ? const Icon(Icons.person, size: 30, color: Colors.grey)
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        staff['fullName'] ?? 'Chưa cập nhật',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFC1473B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Email: ${staff['emailAlias'] ?? staff['email'] ?? 'Chưa cập nhật'}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Số điện thoại: ${staff['phoneNumber'] ?? 'Chưa cập nhật'}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Địa chỉ: ${staff['address'] ?? 'Chưa cập nhật'}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    staff['fullName'] ?? 'Chưa cập nhật',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFC1473B),
-                    ),
+            const SizedBox(height: 10),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => _showStaffDetails(staff),
+                  icon: const Icon(Icons.info_outline, color: Colors.blue),
+                  label: const Text(
+                    'Chi tiết',
+                    style: TextStyle(color: Colors.blue),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Email: ${staff['emailAlias'] ?? staff['email'] ?? 'Chưa cập nhật'}',
-                    style: TextStyle(color: Colors.grey[600]),
+                ),
+                TextButton.icon(
+                  onPressed: () => _editStaff(staff),
+                  icon: const Icon(Icons.edit, color: Colors.green),
+                  label: const Text(
+                    'Chỉnh sửa',
+                    style: TextStyle(color: Colors.green),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Số điện thoại: ${staff['phoneNumber'] ?? 'Chưa cập nhật'}',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Địa chỉ: ${staff['address'] ?? 'Chưa cập nhật'}',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),

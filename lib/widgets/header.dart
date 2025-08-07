@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 
 class Header extends StatelessWidget implements PreferredSizeWidget {
-  // THÊM implements PreferredSizeWidget
   final String name;
   final Color backgroundColor;
 
@@ -15,21 +14,9 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      // Không cần width: double.infinity nữa khi dùng trong AppBar
-      // vì AppBar đã tự động tràn viền ngang rồi.
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ), // Điều chỉnh padding cho phù hợp với AppBar
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: backgroundColor,
-        // BỎ borderRadius nếu bạn muốn nó tràn viền hoàn toàn như AppBar
-        // và không có góc bo tròn ở dưới.
-        // Nếu muốn vẫn có bo tròn nhưng tràn viền, xem ghi chú bên dưới.
-        // borderRadius: const BorderRadius.only(
-        //   bottomLeft: Radius.circular(30),
-        //   bottomRight: Radius.circular(30),
-        // ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -40,7 +27,6 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       child: SafeArea(
-        // Sử dụng SafeArea để tránh thanh trạng thái
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -61,8 +47,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                 ),
-                const Icon(Icons.notifications, color: Colors.yellow, size: 28),
-                const SizedBox(width: 8),
+                // Biểu tượng chuông thông báo đã được xóa
               ],
             ),
             const SizedBox(height: 16),

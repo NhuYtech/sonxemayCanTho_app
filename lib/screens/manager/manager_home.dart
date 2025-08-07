@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import 'package:sonxemaycantho/screens/chat/chat_list.dart';
 import 'package:sonxemaycantho/widgets/navigation_bar.dart';
 import '../profile/profile.dart';
@@ -20,7 +19,8 @@ class _ManagerHomeState extends State<ManagerHome> {
   int _selectedIndex = 0;
   late List<Widget> _screens;
 
-  String _revenue = 'Đang tải...';
+  // Khởi tạo các biến để lưu trữ dữ liệu
+  // Chúng sẽ được cập nhật khi fetch dữ liệu từ Firestore
   String _totalOrders = 'Đang tải...';
   String _stockQuantity = 'Đang tải...';
   String _damagedItems = 'Đang tải...';
@@ -37,11 +37,11 @@ class _ManagerHomeState extends State<ManagerHome> {
   }
 
   // Khởi tạo các màn hình với dữ liệu ban đầu
-  // Màn hình Dashboard sẽ được cập nhật dữ liệu khi fetch xong
+  // Màn hình Dashboard sẽ được cập nhật sau khi lấy dữ liệu
   void _initializeScreens() {
     _screens = [
       Dashboard(
-        revenue: _revenue,
+        revenue: 'Không hiển thị', // Đã bỏ phần tính doanh thu
         totalOrders: _totalOrders,
         stockQuantity: _stockQuantity,
         damagedItems: _damagedItems,
@@ -57,32 +57,27 @@ class _ManagerHomeState extends State<ManagerHome> {
 
   // Hàm chính để lấy tất cả dữ liệu từ Firestore và cập nhật UI
   void _fetchDashboardData() async {
-    // Ngăn không cho gọi setState nếu widget đã bị hủy
     if (!mounted) return;
 
-    // Hiển thị trạng thái đang tải
     setState(() {
       _isLoading = true;
-      _revenue = 'Đang tải...';
       _totalOrders = 'Đang tải...';
       _stockQuantity = 'Đang tải...';
       _damagedItems = 'Đang tải...';
       _customerCount = 'Đang tải...';
       _staffCount = 'Đang tải...';
-      _initializeScreens(); // Khởi tạo lại màn hình với dữ liệu "đang tải"
+      _initializeScreens();
     });
 
     try {
-      // Chạy các tác vụ lấy dữ liệu song song để tối ưu hiệu suất
+      // Chạy các tác vụ lấy dữ liệu song song
       await Future.wait([_fetchStockQuantity(), _fetchOtherData()]);
 
-      // Cập nhật giao diện sau khi tất cả dữ liệu đã được lấy
       if (mounted) {
         setState(() {
           _isLoading = false;
-          // Cập nhật lại màn hình dashboard với dữ liệu mới
           _screens[0] = Dashboard(
-            revenue: _revenue,
+            revenue: 'Không hiển thị', // Dữ liệu doanh thu đã bị loại bỏ
             totalOrders: _totalOrders,
             stockQuantity: _stockQuantity,
             damagedItems: _damagedItems,
@@ -93,20 +88,17 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
     } catch (e) {
-      // Xử lý lỗi nếu có bất kỳ lỗi nào xảy ra trong quá trình fetch
       if (mounted) {
-        print('💥 Error fetching dashboard data: $e');
+        print('💥 Lỗi khi tải dữ liệu dashboard: $e');
         setState(() {
           _stockQuantity = 'Lỗi tải dữ liệu';
-          _revenue = 'Lỗi tải dữ liệu';
           _totalOrders = 'Lỗi tải dữ liệu';
           _damagedItems = 'Lỗi tải dữ liệu';
           _customerCount = 'Lỗi tải dữ liệu';
           _staffCount = 'Lỗi tải dữ liệu';
           _isLoading = false;
-          // Cập nhật màn hình dashboard với thông báo lỗi
           _screens[0] = Dashboard(
-            revenue: _revenue,
+            revenue: 'Lỗi tải dữ liệu',
             totalOrders: _totalOrders,
             stockQuantity: _stockQuantity,
             damagedItems: _damagedItems,
@@ -146,7 +138,7 @@ class _ManagerHomeState extends State<ManagerHome> {
           if (querySnapshot.docs.isNotEmpty) {
             totalImportOrders = querySnapshot.docs.length;
             found = true;
-            break; // Dừng lại sau khi tìm thấy collection đầu tiên có dữ liệu
+            break;
           }
         } catch (e) {
           // Bỏ qua lỗi và thử collection khác
@@ -155,27 +147,23 @@ class _ManagerHomeState extends State<ManagerHome> {
 
       if (mounted) {
         setState(() {
-          if (found && totalImportOrders > 0) {
-            _stockQuantity = '$totalImportOrders đơn nhập';
-          } else {
-            _stockQuantity = '0 đơn nhập';
-          }
+          _stockQuantity = found ? '$totalImportOrders đơn nhập' : '0 đơn nhập';
         });
       }
     } catch (e) {
       if (mounted) {
-        print('💥 Error fetching stock quantity: $e');
+        print('💥 Lỗi khi lấy số lượng đơn nhập kho: $e');
         setState(() {
-          _stockQuantity = 'Lỗi: ${e.toString()}';
+          _stockQuantity = 'Lỗi tải';
         });
       }
     }
   }
 
-  // Lấy các dữ liệu khác bao gồm doanh thu, đơn xuất, sản phẩm hỏng, khách hàng và nhân viên
+  // Lấy các dữ liệu khác bao gồm đơn xuất, sản phẩm hỏng, khách hàng và nhân viên
   Future<void> _fetchOtherData() async {
     try {
-      // 1. Lấy số lượng đơn xuất và tính toán doanh thu
+      // 1. Lấy số lượng đơn xuất
       QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
           .collection('exportOrders')
           .get();
@@ -183,20 +171,6 @@ class _ManagerHomeState extends State<ManagerHome> {
       if (mounted) {
         setState(() {
           _totalOrders = '${exportOrdersSnapshot.docs.length} đơn xuất';
-        });
-      }
-
-      double totalRevenue = 0;
-      for (var doc in exportOrdersSnapshot.docs) {
-        var data = doc.data() as Map<String, dynamic>;
-        int quantity = (data['quantity'] as num?)?.toInt() ?? 0;
-        double itemPrice = 100000; // Giá sản phẩm cố định
-        totalRevenue += (quantity * itemPrice);
-      }
-      if (mounted) {
-        setState(() {
-          final formatter = NumberFormat('#,##0', 'vi_VN');
-          _revenue = '${formatter.format(totalRevenue)} VND';
         });
       }
 
@@ -219,33 +193,19 @@ class _ManagerHomeState extends State<ManagerHome> {
       }
 
       // 3. Lấy số lượng khách hàng
-      try {
-        QuerySnapshot customersSnapshot = await FirebaseFirestore.instance
-            .collection('customers')
-            .get();
-        if (mounted) {
-          setState(() {
-            _customerCount = '${customersSnapshot.docs.length} khách hàng';
-          });
-        }
-      } catch (e) {
-        QuerySnapshot usersSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .get();
-        if (mounted) {
-          setState(() {
-            _customerCount = '${usersSnapshot.docs.length} người dùng';
-          });
-        }
+      QuerySnapshot customersSnapshot = await FirebaseFirestore.instance
+          .collection('customers')
+          .get();
+      if (mounted) {
+        setState(() {
+          _customerCount = '${customersSnapshot.docs.length} khách hàng';
+        });
       }
 
       // 4. Lấy số lượng nhân viên bằng cách lọc theo vai trò
       QuerySnapshot staffSnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where(
-            'role',
-            isEqualTo: 'staff',
-          ) // Lọc những người có vai trò là "staff"
+          .where('role', isEqualTo: 'staff')
           .get();
       if (mounted) {
         setState(() {
@@ -253,11 +213,10 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
     } catch (e) {
-      print('💥 Error fetching other data: $e');
+      print('💥 Lỗi khi lấy dữ liệu khác: $e');
       if (mounted) {
         setState(() {
           _totalOrders = 'Lỗi tải';
-          _revenue = 'Lỗi tải';
           _damagedItems = 'Lỗi tải';
           _customerCount = 'Lỗi tải';
           _staffCount = 'Lỗi tải';
