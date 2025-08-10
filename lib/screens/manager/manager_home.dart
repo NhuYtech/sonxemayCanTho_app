@@ -1,3 +1,4 @@
+// lib/screens/manager/manager_home.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sonxemaycantho/screens/chat/chat_list.dart';
@@ -19,13 +20,12 @@ class _ManagerHomeState extends State<ManagerHome> {
   int _selectedIndex = 0;
   late List<Widget> _screens;
 
-  // Khởi tạo các biến để lưu trữ dữ liệu
-  // Chúng sẽ được cập nhật khi fetch dữ liệu từ Firestore
   String _totalOrders = 'Đang tải...';
   String _stockQuantity = 'Đang tải...';
   String _damagedItems = 'Đang tải...';
   String _customerCount = 'Đang tải...';
   String _staffCount = 'Đang tải...';
+  String _totalStockOrders = 'Đang tải...'; // Thêm biến cho đơn tồn kho
 
   bool _isLoading = true;
 
@@ -36,17 +36,17 @@ class _ManagerHomeState extends State<ManagerHome> {
     _fetchDashboardData();
   }
 
-  // Khởi tạo các màn hình với dữ liệu ban đầu
-  // Màn hình Dashboard sẽ được cập nhật sau khi lấy dữ liệu
   void _initializeScreens() {
     _screens = [
       Dashboard(
-        revenue: 'Không hiển thị', // Đã bỏ phần tính doanh thu
+        revenue: 'Không hiển thị',
         totalOrders: _totalOrders,
         stockQuantity: _stockQuantity,
         damagedItems: _damagedItems,
         customerCount: _customerCount,
         staffCount: _staffCount,
+        totalStockOrders:
+            _totalStockOrders, // Thêm dữ liệu tồn kho vào Dashboard
         isLoading: _isLoading,
       ),
       ManagerOrder(name: widget.name),
@@ -55,7 +55,6 @@ class _ManagerHomeState extends State<ManagerHome> {
     ];
   }
 
-  // Hàm chính để lấy tất cả dữ liệu từ Firestore và cập nhật UI
   void _fetchDashboardData() async {
     if (!mounted) return;
 
@@ -66,23 +65,28 @@ class _ManagerHomeState extends State<ManagerHome> {
       _damagedItems = 'Đang tải...';
       _customerCount = 'Đang tải...';
       _staffCount = 'Đang tải...';
+      _totalStockOrders = 'Đang tải...'; // Cập nhật lại trạng thái
       _initializeScreens();
     });
 
     try {
-      // Chạy các tác vụ lấy dữ liệu song song
-      await Future.wait([_fetchStockQuantity(), _fetchOtherData()]);
+      await Future.wait([
+        _fetchStockQuantity(),
+        _fetchOtherData(),
+        _fetchTotalStockOrders(), // Gọi hàm lấy dữ liệu tồn kho
+      ]);
 
       if (mounted) {
         setState(() {
           _isLoading = false;
           _screens[0] = Dashboard(
-            revenue: 'Không hiển thị', // Dữ liệu doanh thu đã bị loại bỏ
+            revenue: 'Không hiển thị',
             totalOrders: _totalOrders,
             stockQuantity: _stockQuantity,
             damagedItems: _damagedItems,
             customerCount: _customerCount,
             staffCount: _staffCount,
+            totalStockOrders: _totalStockOrders, // Cập nhật lại Dashboard
             isLoading: _isLoading,
           );
         });
@@ -96,6 +100,7 @@ class _ManagerHomeState extends State<ManagerHome> {
           _damagedItems = 'Lỗi tải dữ liệu';
           _customerCount = 'Lỗi tải dữ liệu';
           _staffCount = 'Lỗi tải dữ liệu';
+          _totalStockOrders = 'Lỗi tải dữ liệu'; // Cập nhật trạng thái lỗi
           _isLoading = false;
           _screens[0] = Dashboard(
             revenue: 'Lỗi tải dữ liệu',
@@ -104,6 +109,7 @@ class _ManagerHomeState extends State<ManagerHome> {
             damagedItems: _damagedItems,
             customerCount: _customerCount,
             staffCount: _staffCount,
+            totalStockOrders: _totalStockOrders, // Cập nhật trạng thái lỗi
             isLoading: _isLoading,
           );
         });
@@ -163,18 +169,14 @@ class _ManagerHomeState extends State<ManagerHome> {
   // Lấy các dữ liệu khác bao gồm đơn xuất, sản phẩm hỏng, khách hàng và nhân viên
   Future<void> _fetchOtherData() async {
     try {
-      // 1. Lấy số lượng đơn xuất
       QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
           .collection('exportOrders')
           .get();
-
       if (mounted) {
         setState(() {
           _totalOrders = '${exportOrdersSnapshot.docs.length} đơn xuất';
         });
       }
-
-      // 2. Lấy số lượng sản phẩm hỏng
       QuerySnapshot damagedItemsSnapshot = await FirebaseFirestore.instance
           .collection('damagedItems')
           .get();
@@ -191,8 +193,6 @@ class _ManagerHomeState extends State<ManagerHome> {
           _damagedItems = '$damagedCount sản phẩm';
         });
       }
-
-      // 3. Lấy số lượng khách hàng
       QuerySnapshot customersSnapshot = await FirebaseFirestore.instance
           .collection('customers')
           .get();
@@ -201,8 +201,6 @@ class _ManagerHomeState extends State<ManagerHome> {
           _customerCount = '${customersSnapshot.docs.length} khách hàng';
         });
       }
-
-      // 4. Lấy số lượng nhân viên bằng cách lọc theo vai trò
       QuerySnapshot staffSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('role', isEqualTo: 'staff')
@@ -225,7 +223,30 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
-  // Hàm làm mới dữ liệu
+  // Phương thức mới để lấy tổng đơn tồn kho từ serviceOrders
+  Future<void> _fetchTotalStockOrders() async {
+    try {
+      int totalStockOrders = 0;
+      final stockStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
+      final QuerySnapshot stockOrdersSnapshot = await FirebaseFirestore.instance
+          .collection('serviceOrders')
+          .where('status', whereIn: stockStatuses)
+          .get();
+      totalStockOrders = stockOrdersSnapshot.docs.length;
+      if (mounted) {
+        setState(() {
+          _totalStockOrders = '$totalStockOrders đơn';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _totalStockOrders = 'Lỗi tải';
+        });
+      }
+    }
+  }
+
   void _refreshData() {
     _fetchDashboardData();
   }

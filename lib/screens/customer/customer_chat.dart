@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class CustomerChatScreen extends StatefulWidget {
   final String customerName;
@@ -92,10 +93,35 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
       _chatId = newChatDoc.id;
     }
 
+    // Đánh dấu tin nhắn của manager là đã đọc
+    if (_chatId != null) {
+      _markMessagesAsRead();
+    }
+
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  // Phương thức mới để đánh dấu tin nhắn của manager là đã đọc
+  void _markMessagesAsRead() async {
+    try {
+      final messagesSnapshot = await _firestore
+          .collection('chats')
+          .doc(_chatId)
+          .collection('messages')
+          .where('senderId', isNotEqualTo: _currentUser!.uid)
+          .where('read', isEqualTo: false)
+          .get();
+
+      for (var doc in messagesSnapshot.docs) {
+        await doc.reference.update({'read': true});
+      }
+      debugPrint('>>> Đã đánh dấu tin nhắn là đã đọc.');
+    } catch (e) {
+      debugPrint('>>> Lỗi khi đánh dấu tin nhắn là đã đọc: $e');
     }
   }
 
@@ -115,12 +141,14 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
             'senderId': _currentUser!.uid,
             'text': text,
             'timestamp': FieldValue.serverTimestamp(),
-            'read': false,
+            'read': false, // Thêm trường này để theo dõi trạng thái đọc
           });
 
       await _firestore.collection('chats').doc(_chatId).update({
         'lastMessage': text,
         'lastMessageTimestamp': FieldValue.serverTimestamp(),
+        'hasUnreadMessages':
+            true, // Thông báo có tin nhắn mới cho người quản lý
       });
 
       _controller.clear();
@@ -139,8 +167,7 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       // appBar: AppBar(
-      //   // Hiển thị tên của khách hàng trên thanh app bar
-      //   title: Text('Hỗ trợ với ${widget.customerName}'),
+      //   title: Text('Hỗ trợ với cửa hàng'),
       //   backgroundColor: Colors.red,
       //   foregroundColor: Colors.white,
       // ),
@@ -187,6 +214,11 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                                 messages[index].data() as Map<String, dynamic>;
                             final currentUserIsSender =
                                 messageData['senderId'] == _currentUser?.uid;
+                            final timestamp =
+                                messageData['timestamp'] as Timestamp?;
+                            final timeString = timestamp != null
+                                ? DateFormat('HH:mm').format(timestamp.toDate())
+                                : '';
                             return Align(
                               alignment: currentUserIsSender
                                   ? Alignment.centerRight
@@ -195,29 +227,60 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 4.0,
                                 ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  constraints: const BoxConstraints(
-                                    maxWidth: 280,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: currentUserIsSender
-                                        ? const Color(0xFFB3E5FC)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.2),
-                                        spreadRadius: 1,
-                                        blurRadius: 3,
-                                        offset: const Offset(0, 2),
+                                child: Column(
+                                  crossAxisAlignment: currentUserIsSender
+                                      ? CrossAxisAlignment.end
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      constraints: const BoxConstraints(
+                                        maxWidth: 280,
                                       ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    messageData['text'],
-                                    style: const TextStyle(fontSize: 15),
-                                  ),
+                                      decoration: BoxDecoration(
+                                        color: currentUserIsSender
+                                            ? const Color(0xFFB3E5FC)
+                                            : Colors.white,
+                                        borderRadius: BorderRadius.circular(16),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.2),
+                                            spreadRadius: 1,
+                                            blurRadius: 3,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        messageData['text'],
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          timeString,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        if (currentUserIsSender)
+                                          Icon(
+                                            Icons.done_all,
+                                            size: 16,
+                                            color:
+                                                (messageData['read'] as bool? ??
+                                                    false)
+                                                ? Colors.blue
+                                                : Colors.grey,
+                                          ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
@@ -249,10 +312,29 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  FloatingActionButton(
-                    onPressed: _sendMessage,
-                    backgroundColor: Colors.red,
-                    child: const Icon(Icons.send, color: Colors.white),
+                  GestureDetector(
+                    onTap: _sendMessage,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.4),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.send,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
                   ),
                 ],
               ),

@@ -5,10 +5,11 @@ import 'package:sonxemaycantho/screens/manager/staff_list.dart';
 class Dashboard extends StatelessWidget {
   final String revenue;
   final String totalOrders;
-  final String stockQuantity; // This will now receive the count from Firestore
+  final String stockQuantity;
   final String damagedItems;
   final String customerCount;
   final String staffCount;
+  final String totalStockOrders; // Thêm tham số mới
   final bool isLoading;
 
   const Dashboard({
@@ -19,6 +20,7 @@ class Dashboard extends StatelessWidget {
     required this.damagedItems,
     required this.customerCount,
     required this.staffCount,
+    required this.totalStockOrders, // Thêm vào hàm khởi tạo
     this.isLoading = false,
   });
 
@@ -27,12 +29,6 @@ class Dashboard extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
-        // _buildStatCard(
-        //   'Doanh thu:',
-        //   revenue,
-        //   Icons.bar_chart,
-        //   const Color(0xFFE3F2FD),
-        // ),
         _buildStatCard(
           'Tổng đơn nhập:',
           stockQuantity,
@@ -46,10 +42,10 @@ class Dashboard extends StatelessWidget {
           const Color(0xFFE8F5E9),
         ),
         _buildStatCard(
-          'Tổng số cửa hàng:',
-          customerCount,
-          Icons.people,
-          const Color(0xFFF3E5F5),
+          'Tổng tồn kho:', // Tiêu đề mới
+          totalStockOrders, // Dữ liệu tồn kho
+          Icons.inventory_2, // Icon mới
+          const Color(0xFFFFEBEE), // Màu sắc mới
         ),
         _buildStatCard(
           'Danh sách nhân viên:',
@@ -72,10 +68,9 @@ class Dashboard extends StatelessWidget {
     IconData icon,
     Color color, {
     bool isHighlighted = false,
-    VoidCallback? onTap, // Thêm dòng này để định nghĩa tham số onTap
+    VoidCallback? onTap,
   }) {
     return InkWell(
-      // Sử dụng InkWell để xử lý sự kiện nhấn
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
