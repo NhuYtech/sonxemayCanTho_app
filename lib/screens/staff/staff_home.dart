@@ -42,7 +42,6 @@ class _StaffHomeState extends State<StaffHome> {
   }
 
   void _fetchDashboardData() async {
-    print('🚀 Bắt đầu fetch staff dashboard data...');
     setState(() {
       _isLoading = true;
       _totalImportOrders = 'Đang tải...';
@@ -61,10 +60,8 @@ class _StaffHomeState extends State<StaffHome> {
           _isLoading = false;
           _initializeScreens();
         });
-        print('✅ Hoàn thành fetch staff dashboard data');
       }
     } catch (e) {
-      print('💥 Error fetching staff dashboard data: $e');
       if (mounted) {
         setState(() {
           _totalImportOrders = 'Lỗi tải dữ liệu';
@@ -79,7 +76,6 @@ class _StaffHomeState extends State<StaffHome> {
 
   Future<void> _fetchTotalImportOrders() async {
     try {
-      print('🔍 Bắt đầu fetch dữ liệu tổng đơn nhập...');
       List<String> possibleCollections = [
         'serviceOrders',
         'orders',
@@ -107,7 +103,6 @@ class _StaffHomeState extends State<StaffHome> {
                 collectionName.toLowerCase().contains('serviceorders')) {
               totalImports = querySnapshot.docs.length;
               foundCollection = true;
-              print('✅ Tìm thấy $totalImports đơn nhập trong $collectionName');
               break;
             } else {
               for (var doc in querySnapshot.docs) {
@@ -119,28 +114,23 @@ class _StaffHomeState extends State<StaffHome> {
                         ))) {
                   totalImports = querySnapshot.docs.length;
                   foundCollection = true;
-                  print(
-                    '✅ Tìm thấy $totalImports đơn nhập trong $collectionName (qua type field)',
-                  );
                   break;
                 }
               }
               if (foundCollection) break;
             }
           }
-        } catch (e) {
-          print('❌ Lỗi khi truy cập collection $collectionName: $e');
-        }
+        } catch (e)
+        // ignore: empty_catches
+        {}
       }
 
       if (mounted) {
         setState(() {
           _totalImportOrders = '$totalImports đơn';
         });
-        print('🎯 Cập nhật UI: Tổng đơn nhập: $_totalImportOrders');
       }
     } catch (e) {
-      print('💥 Lỗi khi fetch tổng đơn nhập: $e');
       if (mounted) {
         setState(() {
           _totalImportOrders = 'Lỗi tải';
@@ -151,7 +141,6 @@ class _StaffHomeState extends State<StaffHome> {
 
   Future<void> _fetchTotalExportOrders() async {
     try {
-      print('🔍 Bắt đầu fetch dữ liệu tổng đơn xuất...');
       int totalExports = 0;
       List<String> possibleCollections = [
         'export_orders',
@@ -178,7 +167,6 @@ class _StaffHomeState extends State<StaffHome> {
                 collectionName.toLowerCase().contains('sale')) {
               totalExports = querySnapshot.docs.length;
               foundCollection = true;
-              print('✅ Tìm thấy $totalExports đơn xuất trong $collectionName');
               break;
             } else {
               for (var doc in querySnapshot.docs) {
@@ -193,28 +181,23 @@ class _StaffHomeState extends State<StaffHome> {
                         ))) {
                   totalExports = querySnapshot.docs.length;
                   foundCollection = true;
-                  print(
-                    '✅ Tìm thấy $totalExports đơn xuất trong $collectionName (qua type field)',
-                  );
                   break;
                 }
               }
               if (foundCollection) break;
             }
           }
-        } catch (e) {
-          print('❌ Lỗi khi truy cập collection $collectionName: $e');
-        }
+        } catch (e)
+        // ignore: empty_catches
+        {}
       }
 
       if (mounted) {
         setState(() {
           _totalExportOrders = '$totalExports đơn';
         });
-        print('🎯 Cập nhật UI: Tổng đơn xuất: $_totalExportOrders');
       }
     } catch (e) {
-      print('💥 Lỗi khi fetch tổng đơn xuất: $e');
       if (mounted) {
         setState(() {
           _totalExportOrders = 'Lỗi tải';
@@ -224,7 +207,6 @@ class _StaffHomeState extends State<StaffHome> {
   }
 
   Future<void> _fetchTotalStockOrders() async {
-    print('🔍 Bắt đầu fetch tổng đơn tồn kho...');
     try {
       int totalStockOrders = 0;
       final stockStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
@@ -237,19 +219,14 @@ class _StaffHomeState extends State<StaffHome> {
       totalStockOrders = stockOrdersSnapshot.docs.length;
 
       if (stockOrdersSnapshot.docs.isEmpty) {
-        print('✅ Không có đơn hàng tồn kho nào.');
-      } else {
-        print('✅ Hoàn thành tính tổng đơn tồn kho. Tổng số: $totalStockOrders');
-      }
+      } else {}
 
       if (mounted) {
         setState(() {
           _totalStockOrders = '$totalStockOrders đơn';
         });
-        print('🎯 Cập nhật UI: Tổng đơn tồn kho: $_totalStockOrders');
       }
     } catch (e) {
-      print('💥 Lỗi khi fetch tổng đơn tồn kho: $e');
       if (mounted) {
         setState(() {
           _totalStockOrders = 'Lỗi tải';
@@ -276,6 +253,7 @@ class _StaffHomeState extends State<StaffHome> {
         color: const Color(0xFFC1473B),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 10,
@@ -315,9 +293,7 @@ class _StaffHomeState extends State<StaffHome> {
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () {
-                    print('Clear search tapped!');
-                  },
+                  onPressed: () {},
                 ),
                 filled: true,
                 fillColor: Colors.white,
@@ -338,9 +314,7 @@ class _StaffHomeState extends State<StaffHome> {
                   borderSide: const BorderSide(color: Colors.blue, width: 2),
                 ),
               ),
-              onChanged: (value) {
-                print('Search query: $value');
-              },
+              onChanged: (value) {},
             ),
           ],
         ),
@@ -459,6 +433,7 @@ class _StaffDashboardContent extends StatelessWidget {
         border: isHighlighted ? Border.all(color: Colors.blue, width: 2) : null,
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.2),
             spreadRadius: 1,
             blurRadius: 3,

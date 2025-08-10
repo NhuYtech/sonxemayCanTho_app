@@ -25,11 +25,10 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   String _email = 'Đang tải...';
   String _phone = 'Đang tải...';
   String _address = 'Đang tải...';
-  String _storeName = 'Đang tải...'; // Thêm trường mới
+  String _storeName = 'Đang tải...';
   String _createdAt = 'Đang tải...';
   String _updatedAt = 'Đang tải...';
   String? _avatarUrl;
-  bool _isActive = true;
   bool _isLoading = false;
 
   @override
@@ -74,7 +73,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
             ? dateFormat.format((data['updatedAt'] as Timestamp).toDate())
             : 'Chưa có';
         _avatarUrl = data['avatarUrl'];
-        _isActive = data['isActive'] ?? true;
       });
     } catch (e) {
       _showError('Lỗi khi tải hồ sơ: $e');
@@ -242,15 +240,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     leading: const Icon(Icons.update, color: Color(0xFFC1473B)),
                     title: const Text('Cập nhật gần nhất'),
                     subtitle: Text(_updatedAt),
-                  ),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(
-                      Icons.check_circle_outline,
-                      color: Color(0xFFC1473B),
-                    ),
-                    title: const Text('Trạng thái hoạt động'),
-                    subtitle: Text(_isActive ? 'Hoạt động' : 'Tạm khóa'),
                   ),
                   const Divider(),
                 ],

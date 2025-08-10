@@ -29,7 +29,6 @@ class _ChatListState extends State<ChatList> {
   // Lấy thông tin người dùng hiện tại
   void _loadCurrentUser() {
     _currentUser = _auth.currentUser;
-    // Cập nhật giao diện nếu cần
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -44,7 +43,6 @@ class _ChatListState extends State<ChatList> {
 
   // Lấy tên của người dùng từ Firestore dựa trên UID
   Future<String> _getUserName(String uid) async {
-    // Thử tìm kiếm trong collection 'users' (cho admin/staff)
     try {
       final userDoc = await _firestore.collection('users').doc(uid).get();
       if (userDoc.exists &&
@@ -53,7 +51,6 @@ class _ChatListState extends State<ChatList> {
         return userDoc.data()!['fullName'];
       }
 
-      // Thử tìm kiếm trong collection 'customers'
       final customerDoc = await _firestore
           .collection('customers')
           .doc(uid)
@@ -70,6 +67,27 @@ class _ChatListState extends State<ChatList> {
     return 'Người dùng không xác định';
   }
 
+  // Hàm xóa cuộc trò chuyện
+  Future<void> _deleteChat(String chatId) async {
+    try {
+      // Xóa tất cả tin nhắn trong subcollection 'messages'
+      final messages = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .get();
+      for (var doc in messages.docs) {
+        await doc.reference.delete();
+      }
+
+      // Sau đó xóa tài liệu cuộc trò chuyện chính
+      await _firestore.collection('chats').doc(chatId).delete();
+      debugPrint('>>> Đã xóa cuộc trò chuyện: $chatId');
+    } catch (e) {
+      debugPrint('>>> Lỗi khi xóa cuộc trò chuyện: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading || _currentUser == null) {
@@ -77,11 +95,6 @@ class _ChatListState extends State<ChatList> {
     }
 
     return Scaffold(
-      // appBar: AppBar(
-      //   title: const Text('Hỗ trợ khách hàng'),
-      //   backgroundColor: Colors.red,
-      //   foregroundColor: Colors.white,
-      // ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('chats')
@@ -151,49 +164,68 @@ class _ChatListState extends State<ChatList> {
                         ).format(lastMessageTimestamp.toDate())
                       : '';
 
-                  return Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                  return Dismissible(
+                    key: Key(chatDoc.id),
+                    background: Container(
+                      color: Colors.red,
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: const Icon(Icons.delete, color: Colors.white),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        backgroundColor: Colors.red,
-                        child: Icon(Icons.person, color: Colors.white),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (direction) {
+                      _deleteChat(chatDoc.id);
+                    },
+                    child: Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                      title: Text(
-                        chatPartnerName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: Colors.red,
+                          child: Icon(Icons.person, color: Colors.white),
                         ),
-                      ),
-                      subtitle: Text(
-                        chatData['lastMessage'] ?? 'Chưa có tin nhắn nào.',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                      ),
-                      trailing: Text(
-                        lastMessageTime,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CustomerSupport(
-                              name: chatPartnerName,
-                              chatId: chatDoc.id,
-                              customerId: otherParticipantId,
-                            ),
+                        title: Text(
+                          chatPartnerName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 17,
                           ),
-                        );
-                      },
+                        ),
+                        subtitle: Text(
+                          chatData['lastMessage'] ?? 'Chưa có tin nhắn nào.',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                        trailing: Text(
+                          lastMessageTime,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CustomerSupport(
+                                name: chatPartnerName,
+                                chatId: chatDoc.id,
+                                customerId: otherParticipantId,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   );
                 },

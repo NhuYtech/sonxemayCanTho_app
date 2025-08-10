@@ -34,7 +34,10 @@ class _StaffListState extends State<StaffList> {
           .where('role', isEqualTo: 'staff')
           .get();
 
-      final staffList = snapshot.docs.map((doc) => doc.data()).toList();
+      // Cập nhật: Thêm 'uid' vào mỗi map dữ liệu nhân viên
+      final staffList = snapshot.docs.map((doc) {
+        return {...doc.data(), 'uid': doc.id};
+      }).toList();
 
       if (mounted) {
         setState(() {
@@ -74,9 +77,6 @@ class _StaffListState extends State<StaffList> {
                   'Số điện thoại: ${staff['phoneNumber'] ?? 'Chưa cập nhật'}',
                 ),
                 Text('Địa chỉ: ${staff['address'] ?? 'Chưa cập nhật'}'),
-                Text(
-                  'Trạng thái: ${staff['isActive'] ?? true ? 'Đang hoạt động' : 'Tạm khóa'}',
-                ),
               ],
             ),
           ),

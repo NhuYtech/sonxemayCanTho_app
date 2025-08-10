@@ -62,9 +62,21 @@ class _CustomerSupportState extends State<CustomerSupport> {
 
     for (var message in unreadMessages.docs) {
       if (message.data()['senderId'] != _currentUser!.uid) {
-        message.reference.update({'read': true});
+        await message.reference.update({'read': true});
       }
     }
+
+    // Update the hasUnreadMessages field in the parent chat document
+    final remainingUnreadMessages = await _firestore
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('messages')
+        .where('read', isEqualTo: false)
+        .get();
+
+    await _firestore.collection('chats').doc(widget.chatId).update({
+      'hasUnreadMessages': remainingUnreadMessages.docs.isNotEmpty,
+    });
   }
 
   void _sendMessage() async {
@@ -106,7 +118,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Chat với ${widget.name}'),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFFC1473B),
         foregroundColor: Colors.white,
       ),
       body: SafeArea(

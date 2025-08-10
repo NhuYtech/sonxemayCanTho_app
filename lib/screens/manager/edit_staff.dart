@@ -18,7 +18,7 @@ class _EditStaffState extends State<EditStaff> {
   late TextEditingController _emailAliasController;
   late TextEditingController _phoneNumberController;
   late TextEditingController _addressController;
-  late bool _isActive;
+  // late bool _isActive;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isSaving = false;
@@ -39,7 +39,7 @@ class _EditStaffState extends State<EditStaff> {
     _addressController = TextEditingController(
       text: widget.staff['address'] ?? '',
     );
-    _isActive = widget.staff['isActive'] ?? true;
+    // _isActive = widget.staff['isActive'] ?? true;
   }
 
   @override
@@ -70,21 +70,13 @@ class _EditStaffState extends State<EditStaff> {
           'emailAlias': _emailAliasController.text,
           'phoneNumber': _phoneNumberController.text,
           'address': _addressController.text,
-          'isActive': _isActive,
           'updatedAt': FieldValue.serverTimestamp(),
         };
 
         await _firestore.collection('users').doc(staffUid).update(updatedData);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cập nhật thông tin nhân viên thành công.'),
-            ),
-          );
-          Navigator.of(
-            context,
-          ).pop(true); // Trở về màn hình trước và báo thành công
+          _showSuccessPopup();
         }
       } catch (e) {
         _showError('Lỗi khi cập nhật thông tin: $e');
@@ -96,6 +88,30 @@ class _EditStaffState extends State<EditStaff> {
         }
       }
     }
+  }
+
+  // Hàm hiển thị pop-up thông báo thành công
+  void _showSuccessPopup() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Thành công !🎉', textAlign: TextAlign.center),
+          content: const Text('Thông tin nhân viên đã được cập nhật.'),
+          actions: <Widget>[
+            Center(
+              child: TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Đóng pop-up
+                  Navigator.of(context).pop(true); // Trở về màn hình trước
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showError(String message) {
@@ -115,12 +131,12 @@ class _EditStaffState extends State<EditStaff> {
         backgroundColor: const Color(0xFFC1473B),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: _isSaving
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Icon(Icons.save),
-            onPressed: _isSaving ? null : _saveStaffChanges,
-          ),
+          // IconButton(
+          //   icon: _isSaving
+          //       ? const CircularProgressIndicator(color: Colors.white)
+          //       : const Icon(Icons.save),
+          //   onPressed: _isSaving ? null : _saveStaffChanges,
+          // ),
         ],
       ),
       body: SingleChildScrollView(
@@ -195,21 +211,6 @@ class _EditStaffState extends State<EditStaff> {
                   prefixIcon: Icon(Icons.location_on),
                 ),
                 maxLines: null,
-              ),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                title: const Text('Trạng thái hoạt động'),
-                subtitle: Text(_isActive ? 'Đang hoạt động' : 'Tạm khóa'),
-                value: _isActive,
-                onChanged: (bool value) {
-                  setState(() {
-                    _isActive = value;
-                  });
-                },
-                secondary: Icon(
-                  _isActive ? Icons.check_circle : Icons.lock,
-                  color: _isActive ? Colors.green : Colors.red,
-                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
