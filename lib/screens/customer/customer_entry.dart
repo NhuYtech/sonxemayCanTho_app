@@ -19,7 +19,7 @@ class _CustomerEntryState extends State<CustomerEntry> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  List<ServiceOrderItem> _orderItems = [];
+  final List<ServiceOrderItem> _orderItems = [];
   bool _isLoading = false;
 
   final List<String> _carModels = [

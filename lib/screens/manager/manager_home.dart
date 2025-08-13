@@ -1,4 +1,3 @@
-// lib/screens/manager/manager_home.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sonxemaycantho/screens/chat/chat_list.dart';
@@ -25,7 +24,7 @@ class _ManagerHomeState extends State<ManagerHome> {
   String _damagedItems = 'Đang tải...';
   String _customerCount = 'Đang tải...';
   String _staffCount = 'Đang tải...';
-  String _totalStockOrders = 'Đang tải...'; // Thêm biến cho đơn tồn kho
+  String _totalStockOrders = 'Đang tải...';
 
   bool _isLoading = true;
 
@@ -45,8 +44,7 @@ class _ManagerHomeState extends State<ManagerHome> {
         damagedItems: _damagedItems,
         customerCount: _customerCount,
         staffCount: _staffCount,
-        totalStockOrders:
-            _totalStockOrders, // Thêm dữ liệu tồn kho vào Dashboard
+        totalStockOrders: _totalStockOrders,
         isLoading: _isLoading,
       ),
       ManagerOrder(name: widget.name),
@@ -65,7 +63,7 @@ class _ManagerHomeState extends State<ManagerHome> {
       _damagedItems = 'Đang tải...';
       _customerCount = 'Đang tải...';
       _staffCount = 'Đang tải...';
-      _totalStockOrders = 'Đang tải...'; // Cập nhật lại trạng thái
+      _totalStockOrders = 'Đang tải...';
       _initializeScreens();
     });
 
@@ -73,7 +71,7 @@ class _ManagerHomeState extends State<ManagerHome> {
       await Future.wait([
         _fetchStockQuantity(),
         _fetchOtherData(),
-        _fetchTotalStockOrders(), // Gọi hàm lấy dữ liệu tồn kho
+        _fetchTotalStockOrders(),
       ]);
 
       if (mounted) {
@@ -86,21 +84,20 @@ class _ManagerHomeState extends State<ManagerHome> {
             damagedItems: _damagedItems,
             customerCount: _customerCount,
             staffCount: _staffCount,
-            totalStockOrders: _totalStockOrders, // Cập nhật lại Dashboard
+            totalStockOrders: _totalStockOrders,
             isLoading: _isLoading,
           );
         });
       }
     } catch (e) {
       if (mounted) {
-        print('💥 Lỗi khi tải dữ liệu dashboard: $e');
         setState(() {
           _stockQuantity = 'Lỗi tải dữ liệu';
           _totalOrders = 'Lỗi tải dữ liệu';
           _damagedItems = 'Lỗi tải dữ liệu';
           _customerCount = 'Lỗi tải dữ liệu';
           _staffCount = 'Lỗi tải dữ liệu';
-          _totalStockOrders = 'Lỗi tải dữ liệu'; // Cập nhật trạng thái lỗi
+          _totalStockOrders = 'Lỗi tải dữ liệu';
           _isLoading = false;
           _screens[0] = Dashboard(
             revenue: 'Lỗi tải dữ liệu',
@@ -109,7 +106,7 @@ class _ManagerHomeState extends State<ManagerHome> {
             damagedItems: _damagedItems,
             customerCount: _customerCount,
             staffCount: _staffCount,
-            totalStockOrders: _totalStockOrders, // Cập nhật trạng thái lỗi
+            totalStockOrders: _totalStockOrders,
             isLoading: _isLoading,
           );
         });
@@ -117,7 +114,6 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
-  // Lấy số lượng đơn nhập kho từ các collection có thể có
   Future<void> _fetchStockQuantity() async {
     try {
       List<String> possibleCollections = [
@@ -158,7 +154,6 @@ class _ManagerHomeState extends State<ManagerHome> {
       }
     } catch (e) {
       if (mounted) {
-        print('💥 Lỗi khi lấy số lượng đơn nhập kho: $e');
         setState(() {
           _stockQuantity = 'Lỗi tải';
         });
@@ -166,7 +161,6 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
-  // Lấy các dữ liệu khác bao gồm đơn xuất, sản phẩm hỏng, khách hàng và nhân viên
   Future<void> _fetchOtherData() async {
     try {
       QuerySnapshot exportOrdersSnapshot = await FirebaseFirestore.instance
@@ -211,7 +205,6 @@ class _ManagerHomeState extends State<ManagerHome> {
         });
       }
     } catch (e) {
-      print('💥 Lỗi khi lấy dữ liệu khác: $e');
       if (mounted) {
         setState(() {
           _totalOrders = 'Lỗi tải';
@@ -223,7 +216,6 @@ class _ManagerHomeState extends State<ManagerHome> {
     }
   }
 
-  // Phương thức mới để lấy tổng đơn tồn kho từ serviceOrders
   Future<void> _fetchTotalStockOrders() async {
     try {
       int totalStockOrders = 0;

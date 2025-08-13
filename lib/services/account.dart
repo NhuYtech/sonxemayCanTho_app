@@ -54,9 +54,8 @@ class AccountService {
     try {
       final doc = await _accountCollection.doc(uid).get();
       if (doc.exists) return doc.data() as Map<String, dynamic>;
-    } catch (e) {
-      print('Error getting account by UID $uid: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
     return null;
   }
 }

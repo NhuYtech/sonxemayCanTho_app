@@ -11,7 +11,6 @@ class FirestoreService {
     try {
       await _firestore.collection(collection).add(data);
     } catch (e) {
-      print('Lỗi khi thêm dữ liệu: $e');
       rethrow;
     }
   }
@@ -25,7 +24,6 @@ class FirestoreService {
     try {
       await _firestore.collection(collection).doc(documentId).update(data);
     } catch (e) {
-      print('Lỗi khi cập nhật dữ liệu: $e');
       rethrow;
     }
   }
@@ -43,7 +41,6 @@ class FirestoreService {
     try {
       return await _firestore.collection(collection).doc(documentId).get();
     } catch (e) {
-      print('Lỗi khi lấy document: $e');
       rethrow;
     }
   }
@@ -56,7 +53,6 @@ class FirestoreService {
     try {
       await _firestore.collection(collection).doc(documentId).delete();
     } catch (e) {
-      print('Lỗi khi xóa dữ liệu: $e');
       rethrow;
     }
   }
@@ -73,7 +69,6 @@ class FirestoreService {
           .where(field, isEqualTo: value)
           .get();
     } catch (e) {
-      print('Lỗi khi tìm kiếm dữ liệu: $e');
       rethrow;
     }
   }

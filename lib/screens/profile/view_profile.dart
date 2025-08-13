@@ -1,4 +1,3 @@
-// lib/screens/profile/view_profile.dart
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -64,8 +63,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         _email = data['emailAlias'] ?? currentUser.email ?? 'Chưa cập nhật';
         _phone = data['phoneNumber'] ?? 'Chưa cập nhật';
         _address = data['address'] ?? 'Chưa cập nhật';
-        _storeName =
-            data['storeName'] ?? 'Chưa cập nhật'; // Lấy dữ liệu tên cửa hàng
+        _storeName = data['storeName'] ?? 'Chưa cập nhật';
         _createdAt = data['createdAt'] != null
             ? dateFormat.format((data['createdAt'] as Timestamp).toDate())
             : 'Chưa có';
@@ -88,7 +86,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   }
 
   Future<void> _uploadAvatar() async {
-    // Giữ nguyên phần logic này
     final currentUser = _auth.currentUser;
     if (currentUser == null) return;
     try {
@@ -111,6 +108,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         _isLoading = false;
       });
       if (context.mounted) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật.')),
         );
@@ -199,7 +197,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     subtitle: Text(_fullName),
                   ),
                   const Divider(),
-                  // Thêm ListTile để hiển thị tên cửa hàng
                   ListTile(
                     leading: const Icon(Icons.store, color: Color(0xFFC1473B)),
                     title: const Text('Tên cửa hàng'),

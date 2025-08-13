@@ -105,6 +105,7 @@ class ManagerProfileScreen extends StatelessWidget {
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
 
+              // ignore: use_build_context_synchronously
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const RoleSelection()),
                 (route) => false,

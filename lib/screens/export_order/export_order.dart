@@ -1,8 +1,7 @@
-// lib/screens/manager/export_order.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:sonxemaycantho/models/service_order.dart'; // Đảm bảo đã import ServiceOrder model
+import 'package:sonxemaycantho/models/service_order.dart';
 
 class ExportOrder extends StatefulWidget {
   const ExportOrder({super.key});
@@ -42,7 +41,6 @@ class _ExportOrderState extends State<ExportOrder> {
     super.dispose();
   }
 
-  /// Tải các đơn hàng nhập có trạng thái "Đã sơn xong" từ Firestore.
   Future<void> _loadServiceOrders() async {
     try {
       QuerySnapshot snapshot = await _firestore
@@ -52,13 +50,10 @@ class _ExportOrderState extends State<ExportOrder> {
       setState(() {
         _serviceOrders = snapshot.docs;
       });
-      print('📋 Đã load ${_serviceOrders.length} đơn nhập đã hoàn thành.');
-    } catch (e) {
-      print('❌ Lỗi khi tải đơn nhập: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
-  /// Tự động tính tổng số lượng xe từ tất cả ServiceOrderItem của một ServiceOrder.
   Future<void> _calculateAndFillQuantity(String serviceOrderId) async {
     try {
       QuerySnapshot itemSnapshot = await _firestore
@@ -75,14 +70,12 @@ class _ExportOrderState extends State<ExportOrder> {
         _quantityController.text = totalQuantity.toString();
       });
     } catch (e) {
-      print('❌ Lỗi khi tính tổng số lượng: $e');
       setState(() {
-        _quantityController.text = '0'; // Đặt về 0 nếu có lỗi
+        _quantityController.text = '0';
       });
     }
   }
 
-  /// Hiển thị hộp thoại để chọn đơn nhập.
   void _showServiceOrderDialog() {
     showDialog(
       context: context,
@@ -118,13 +111,11 @@ class _ExportOrderState extends State<ExportOrder> {
                           ],
                         ),
                         onTap: () {
-                          // Tự động điền thông tin vào form
                           _serviceOrderIdController.text = order.id;
                           _customerStoreNameController.text =
                               selectedOrder.storeName;
                           _noteController.text = selectedOrder.note ?? '';
 
-                          // Gọi phương thức để tính tổng số lượng
                           _calculateAndFillQuantity(order.id);
 
                           Navigator.pop(context);
@@ -144,7 +135,6 @@ class _ExportOrderState extends State<ExportOrder> {
     );
   }
 
-  /// Hiển thị form để thêm đơn xuất.
   void _showAddExportOrderForm() {
     _clearForm();
 
@@ -152,7 +142,6 @@ class _ExportOrderState extends State<ExportOrder> {
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        // Use StatefulBuilder to manage the state of the modal bottom sheet
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter modalSetState) {
             return Padding(
@@ -303,33 +292,16 @@ class _ExportOrderState extends State<ExportOrder> {
         throw Exception('Số lượng không hợp lệ.');
       }
 
-      // Tạo đơn xuất mới
-      DocumentReference docRef = await _firestore
-          .collection('exportOrders')
-          .add({
-            'customerStoreName': _customerStoreNameController.text.trim(),
-            'exportDate': Timestamp.fromDate(_selectedExportDate!),
-            'note': _noteController.text.trim().isEmpty
-                ? ''
-                : _noteController.text.trim(),
-            'quantity': quantity,
-            'serviceOrderId': _serviceOrderIdController.text.trim(),
-            'createdBy': _createdByController.text.trim(),
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-      // CẬP NHẬT: Trạng thái của đơn nhập gốc thành "Đã gửi"
       await _firestore
           .collection('serviceOrders')
           .doc(_serviceOrderIdController.text.trim())
           .update({'status': 'Đã gửi'});
 
-      print('✅ Đã tạo đơn xuất: ${docRef.id} và cập nhật trạng thái đơn nhập.');
       _clearForm();
       _showSnackBar('✅ Đơn xuất đã được thêm thành công!', Colors.green);
+      // ignore: use_build_context_synchronously
       Navigator.pop(context); // Đóng modal bottom sheet
     } catch (e) {
-      print('❌ Lỗi khi thêm đơn xuất: $e');
       _showSnackBar('❌ Lỗi khi thêm đơn xuất: $e', Colors.red);
     } finally {
       setState(() {

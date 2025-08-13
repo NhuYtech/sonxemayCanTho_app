@@ -93,7 +93,6 @@ class _OrderEntryState extends State<OrderEntry> {
         });
       }
     } catch (e) {
-      print('Lỗi khi load dữ liệu order items: $e');
       // Thêm item mặc định nếu có lỗi
       setState(() {
         _orderItems.add(
@@ -143,7 +142,6 @@ class _OrderEntryState extends State<OrderEntry> {
         isSuccess: true,
       );
     } catch (e) {
-      print('Lỗi khi cập nhật trạng thái: $e');
       _showConfirmationDialog(
         title: 'Lỗi!',
         content: 'Đã xảy ra lỗi khi cập nhật trạng thái. Vui lòng thử lại.',
@@ -176,7 +174,6 @@ class _OrderEntryState extends State<OrderEntry> {
         await _createOrder();
       }
     } catch (e) {
-      print('Lỗi khi ${_isEditMode ? 'cập nhật' : 'tạo'} đơn hàng: $e');
       _showConfirmationDialog(
         title: 'Lỗi!',
         content:

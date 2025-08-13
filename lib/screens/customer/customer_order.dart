@@ -36,7 +36,6 @@ class CustomerOrder extends StatelessWidget {
                     context,
                     MaterialPageRoute(builder: (context) => const OrderList()),
                   );
-                  print('Đơn xuất tapped!');
                 },
               ),
               const SizedBox(height: 20),
@@ -61,6 +60,7 @@ class CustomerOrder extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.3),
             spreadRadius: 1.5,
             blurRadius: 5,

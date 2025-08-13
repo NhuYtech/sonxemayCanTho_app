@@ -20,7 +20,7 @@ class Dashboard extends StatelessWidget {
     required this.damagedItems,
     required this.customerCount,
     required this.staffCount,
-    required this.totalStockOrders, // Thêm vào hàm khởi tạo
+    required this.totalStockOrders,
     this.isLoading = false,
   });
 
@@ -42,10 +42,10 @@ class Dashboard extends StatelessWidget {
           const Color(0xFFE8F5E9),
         ),
         _buildStatCard(
-          'Tổng tồn kho:', // Tiêu đề mới
-          totalStockOrders, // Dữ liệu tồn kho
-          Icons.inventory_2, // Icon mới
-          const Color(0xFFFFEBEE), // Màu sắc mới
+          'Tổng tồn kho:',
+          totalStockOrders,
+          Icons.inventory_2,
+          const Color(0xFFFFEBEE),
         ),
         _buildStatCard(
           'Danh sách nhân viên:',
@@ -84,6 +84,7 @@ class Dashboard extends StatelessWidget {
               : null,
           boxShadow: [
             BoxShadow(
+              // ignore: deprecated_member_use
               color: Colors.grey.withOpacity(0.2),
               spreadRadius: 1,
               blurRadius: 3,

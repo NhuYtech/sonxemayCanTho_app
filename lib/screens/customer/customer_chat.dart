@@ -1,4 +1,3 @@
-// lib/screens/customer/customer_chat.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -35,11 +34,9 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
     super.dispose();
   }
 
-  // Khởi tạo cuộc trò chuyện: tìm hoặc tạo mới với manager
   void _initializeChat() async {
     final user = _auth.currentUser;
     if (user == null) {
-      // Xử lý trường hợp người dùng chưa đăng nhập
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -49,7 +46,6 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
     }
     _currentUser = user;
 
-    // Tìm manager có role là 'manager'
     final managerSnapshot = await _firestore
         .collection('users')
         .where('role', isEqualTo: 'manager')
@@ -166,11 +162,6 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text('Hỗ trợ với cửa hàng'),
-      //   backgroundColor: Colors.red,
-      //   foregroundColor: Colors.white,
-      // ),
       body: SafeArea(
         child: Column(
           children: [
@@ -244,6 +235,7 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
+                                            // ignore: deprecated_member_use
                                             color: Colors.grey.withOpacity(0.2),
                                             spreadRadius: 1,
                                             blurRadius: 3,
@@ -322,6 +314,7 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
+                            // ignore: deprecated_member_use
                             color: Colors.red.withOpacity(0.4),
                             spreadRadius: 1,
                             blurRadius: 5,

@@ -49,10 +49,12 @@ class _RegisterState extends State<Register> {
       }
 
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text(errorMsg)));
     } catch (e) {
       ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
         context,
       ).showSnackBar(SnackBar(content: Text('Lỗi không xác định: $e')));
     } finally {

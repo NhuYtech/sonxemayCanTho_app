@@ -41,7 +41,6 @@ class OrderContent extends StatelessWidget {
                         builder: (context) => const OrderList(),
                       ),
                     );
-                    print('Đơn nhập tapped!');
                   },
                 ),
                 _buildFunctionTile(
@@ -56,7 +55,6 @@ class OrderContent extends StatelessWidget {
                         builder: (context) => const ExportOrder(),
                       ),
                     );
-                    print('Đơn xuất tapped!');
                   },
                 ),
                 _buildFunctionTile(
@@ -71,7 +69,6 @@ class OrderContent extends StatelessWidget {
                         builder: (context) => const StockOrder(),
                       ),
                     );
-                    print('Đơn tồn kho tapped!');
                   },
                 ),
                 const SizedBox(height: 20),
@@ -97,6 +94,7 @@ class OrderContent extends StatelessWidget {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.grey.withOpacity(0.3),
             spreadRadius: 1.5,
             blurRadius: 5,

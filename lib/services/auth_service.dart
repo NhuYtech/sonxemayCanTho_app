@@ -19,6 +19,7 @@ class AuthService {
   // --- Các hàm cho Nhân viên/Quản lý (Xác thực bằng SĐT + Mật khẩu tĩnh qua Email Alias) ---
 
   /// ✅ Đăng ký tài khoản Nhân viên/Quản lý bằng SĐT (làm email alias) và mật khẩu tĩnh
+  // ignore: unintended_html_in_doc_comment
   /// Trả về Map<String, dynamic>? chứa thông tin user (UID, fullName, role, phoneNumber, type)
   Future<Map<String, dynamic>?> registerStaffAccount({
     required String phoneNumber,
@@ -34,7 +35,7 @@ class AuthService {
         // Nếu đã có 84 đầu, giữ nguyên
       } else if (cleanedPhoneNumber.startsWith('0')) {
         cleanedPhoneNumber =
-            '84' + cleanedPhoneNumber.substring(1); // Chuyển 0xxx thành 84xxx
+            '84${cleanedPhoneNumber.substring(1)}'; // Chuyển 0xxx thành 84xxx
       } else if (cleanedPhoneNumber.startsWith('+84')) {
         cleanedPhoneNumber = cleanedPhoneNumber.substring(3); // Bỏ +84
       }
@@ -73,10 +74,8 @@ class AuthService {
       if (e.code == 'email-already-in-use') {
         throw Exception('Số điện thoại này đã được đăng ký.');
       }
-      print('Error registering staff account: ${e.message}');
       throw Exception(e.message);
     } catch (e) {
-      print('Unknown error during staff registration: $e');
       throw Exception(
         'Đăng ký tài khoản nhân viên thất bại. Vui lòng thử lại.',
       );
@@ -85,6 +84,7 @@ class AuthService {
   }
 
   /// 🔐 Đăng nhập bằng SĐT (làm email alias) và mật khẩu tĩnh (dành cho Nhân viên/Quản lý)
+  // ignore: unintended_html_in_doc_comment
   /// Trả về Map<String, dynamic>? chứa thông tin user (UID, fullName, role, phoneNumber, type)
   Future<Map<String, dynamic>?> signInWithPhoneNumberAndStaticPassword({
     required String phoneNumber,
@@ -97,7 +97,7 @@ class AuthService {
         // Nếu đã có 84 đầu, giữ nguyên
       } else if (cleanedPhoneNumber.startsWith('0')) {
         cleanedPhoneNumber =
-            '84' + cleanedPhoneNumber.substring(1); // Chuyển 0xxx thành 84xxx
+            '84${cleanedPhoneNumber.substring(1)}'; // Chuyển 0xxx thành 84xxx
       } else if (cleanedPhoneNumber.startsWith('+84')) {
         cleanedPhoneNumber = cleanedPhoneNumber.substring(3); // Bỏ +84
       }
@@ -155,10 +155,8 @@ class AuthService {
           'Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau.',
         );
       }
-      print('Error signing in with phone and static password: ${e.message}');
       throw Exception(e.message);
     } catch (e) {
-      print('Unknown error during phone and static password sign-in: $e');
       throw Exception('Đăng nhập thất bại. Vui lòng thử lại.');
     }
     return null;
@@ -167,6 +165,7 @@ class AuthService {
   // --- Các hàm cho Khách hàng (Đăng nhập bằng Google) ---
 
   /// 🔐 Đăng nhập bằng Google (dành cho Khách hàng)
+  // ignore: unintended_html_in_doc_comment
   /// Trả về Map<String, dynamic>? chứa thông tin user (UID, email, fullName, type)
   Future<Map<String, dynamic>?> signInWithGoogle() async {
     try {
@@ -227,7 +226,6 @@ class AuthService {
         }
       }
     } on FirebaseAuthException catch (e) {
-      print('Error signing in with Google: ${e.message}');
       if (e.code == 'account-exists-with-different-credential') {
         throw Exception(
           'Tài khoản này đã tồn tại với một phương thức đăng nhập khác. Vui lòng sử dụng phương thức đăng nhập ban đầu của bạn.',
@@ -235,7 +233,6 @@ class AuthService {
       }
       throw Exception(e.message);
     } catch (e) {
-      print('Unknown error during Google Sign-In: $e');
       throw Exception('Đăng nhập với Google thất bại.');
     }
     return null;
@@ -247,7 +244,6 @@ class AuthService {
       await _googleSignIn.signOut();
       await _auth.signOut();
     } catch (e) {
-      print('Error signing out: $e');
       throw Exception('Đăng xuất thất bại.');
     }
   }
@@ -306,8 +302,6 @@ class AuthService {
         'password': newPassword,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-
-      print('Mật khẩu đã được cập nhật thành công.');
     } on FirebaseAuthException catch (e) {
       if (e.code == 'wrong-password') {
         throw Exception('Mật khẩu hiện tại không đúng.');
@@ -316,10 +310,8 @@ class AuthService {
           'Để thay đổi mật khẩu, bạn cần đăng nhập lại. Vui lòng đăng xuất và đăng nhập lại.',
         );
       }
-      print('Error updating password: ${e.message}');
       throw Exception(e.message);
     } catch (e) {
-      print('Unknown error updating password: $e');
       throw Exception('Không thể cập nhật mật khẩu. Vui lòng thử lại.');
     }
   }
@@ -350,6 +342,7 @@ class AuthService {
       // Nếu đã có 84 đầu, giữ nguyên
     } else if (cleanedPhoneNumber.startsWith('0')) {
       cleanedPhoneNumber =
+          // ignore: prefer_interpolation_to_compose_strings
           '84' + cleanedPhoneNumber.substring(1); // Chuyển 0xxx thành 84xxx
     } else if (cleanedPhoneNumber.startsWith('+84')) {
       cleanedPhoneNumber = cleanedPhoneNumber.substring(3); // Bỏ +84
@@ -362,10 +355,8 @@ class AuthService {
       if (e.code == 'user-not-found') {
         throw Exception('Không tìm thấy tài khoản với số điện thoại này.');
       }
-      print('Error sending password reset email for staff: ${e.message}');
       throw Exception(e.message);
     } catch (e) {
-      print('Unknown error sending password reset email for staff: $e');
       throw Exception('Gửi yêu cầu đặt lại mật khẩu thất bại.');
     }
   }
@@ -374,6 +365,7 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
 
   /// Lấy thông tin chi tiết người dùng từ Firestore (bao gồm role và type)
+  // ignore: unintended_html_in_doc_comment
   /// Trả về Map<String, dynamic>? chứa thông tin chi tiết của user
   Future<Map<String, dynamic>?> getCurrentUserFirestoreData() async {
     User? user = _auth.currentUser;

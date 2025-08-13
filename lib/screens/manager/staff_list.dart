@@ -1,5 +1,3 @@
-// lib/screens/staff_list_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sonxemaycantho/screens/manager/edit_staff.dart';
@@ -34,7 +32,6 @@ class _StaffListState extends State<StaffList> {
           .where('role', isEqualTo: 'staff')
           .get();
 
-      // Cập nhật: Thêm 'uid' vào mỗi map dữ liệu nhân viên
       final staffList = snapshot.docs.map((doc) {
         return {...doc.data(), 'uid': doc.id};
       }).toList();
@@ -45,7 +42,6 @@ class _StaffListState extends State<StaffList> {
         });
       }
     } catch (e) {
-      print('Error fetching staff list: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi khi tải danh sách nhân viên: $e')),

@@ -282,7 +282,7 @@ class _StaffHomeState extends State<StaffHome> {
                     ),
                   ),
                 ),
-                const Icon(Icons.notifications, color: Colors.yellow, size: 28),
+                // const Icon(Icons.notifications, color: Colors.yellow, size: 28),
                 const SizedBox(width: 8),
               ],
             ),

@@ -19,6 +19,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
         color: backgroundColor,
         boxShadow: [
           BoxShadow(
+            // ignore: deprecated_member_use
             color: Colors.black.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 10,
@@ -57,9 +58,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () {
-                    print('Clear search tapped!');
-                  },
+                  onPressed: () {},
                 ),
                 filled: true,
                 fillColor: Colors.white,
@@ -80,9 +79,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
                   borderSide: const BorderSide(color: Colors.blue, width: 2),
                 ),
               ),
-              onChanged: (value) {
-                print('Search query: $value');
-              },
+              onChanged: (value) {},
             ),
           ],
         ),

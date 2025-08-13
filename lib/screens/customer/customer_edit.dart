@@ -101,8 +101,6 @@ class _CustomerEditState extends State<CustomerEdit> {
           }).toList();
         });
       }
-    } catch (e) {
-      print('Lỗi khi tải chi tiết đơn hàng: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -176,6 +174,7 @@ class _CustomerEditState extends State<CustomerEdit> {
         );
       }
     } catch (e) {
+      // ignore: avoid_print
       print('Lỗi khi cập nhật đơn hàng: $e');
       if (mounted) {
         _showConfirmationDialog(
@@ -336,7 +335,7 @@ class _CustomerEditState extends State<CustomerEdit> {
                         item.ServiceOrderItem orderItem = entry.value;
                         return Padding(
                           key: Key(
-                            orderItem.id ?? 'order_item_${index}',
+                            orderItem.id ?? 'order_item_$index',
                           ), // Thêm key cho Padding
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: Card(

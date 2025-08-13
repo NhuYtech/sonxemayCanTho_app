@@ -1,5 +1,3 @@
-// lib/screens/staff/edit_staff_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -18,7 +16,6 @@ class _EditStaffState extends State<EditStaff> {
   late TextEditingController _emailAliasController;
   late TextEditingController _phoneNumberController;
   late TextEditingController _addressController;
-  // late bool _isActive;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isSaving = false;
@@ -26,7 +23,6 @@ class _EditStaffState extends State<EditStaff> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo các controller với dữ liệu hiện tại của nhân viên
     _fullNameController = TextEditingController(
       text: widget.staff['fullName'] ?? '',
     );
@@ -130,14 +126,7 @@ class _EditStaffState extends State<EditStaff> {
         ),
         backgroundColor: const Color(0xFFC1473B),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          // IconButton(
-          //   icon: _isSaving
-          //       ? const CircularProgressIndicator(color: Colors.white)
-          //       : const Icon(Icons.save),
-          //   onPressed: _isSaving ? null : _saveStaffChanges,
-          // ),
-        ],
+        actions: [],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

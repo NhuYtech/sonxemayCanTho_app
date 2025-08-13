@@ -36,7 +36,6 @@ class _CustomerOrderListState extends State<CustomerOrderList> {
           _isLoading = false;
         });
         // Dòng này để bạn kiểm tra trong console xem tên cửa hàng đã được lấy chưa
-        print('Tên cửa hàng của người dùng: $_userStoreName');
       } else {
         setState(() {
           _isLoading = false;
@@ -57,6 +56,7 @@ class _CustomerOrderListState extends State<CustomerOrderList> {
           .doc(order.id)
           .update({'status': 'Đã nhận'});
       if (mounted) {
+        // ignore: use_build_context_synchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã xác nhận nhận hàng thành công!')),
         );
@@ -64,6 +64,7 @@ class _CustomerOrderListState extends State<CustomerOrderList> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
+          // ignore: use_build_context_synchronously
           context,
         ).showSnackBar(SnackBar(content: Text('Lỗi khi xác nhận: $e')));
       }

@@ -38,7 +38,7 @@ class _EditOrderState extends State<EditOrder> {
     'Đã nhận',
     'Đang sơn',
     'Đã sơn xong',
-    'Đã gửi', // Thêm trạng thái 'Đã gửi' vào đây
+    'Đã gửi',
   ];
 
   @override
@@ -47,13 +47,10 @@ class _EditOrderState extends State<EditOrder> {
     _storeNameController.text = widget.serviceOrder.storeName;
     _generalNoteController.text = widget.serviceOrder.note ?? '';
 
-    // Đảm bảo giá trị của DropdownButtonFormField là hợp lệ
-    // Nếu trạng thái từ database không tồn tại trong danh sách, gán giá trị mặc định.
     if (_orderStatuses.contains(widget.serviceOrder.status)) {
       _selectedStatus = widget.serviceOrder.status;
     } else {
-      _selectedStatus =
-          _orderStatuses.first; // Hoặc gán một giá trị mặc định khác
+      _selectedStatus = _orderStatuses.first;
     }
 
     _fetchOrderItems();
@@ -97,8 +94,6 @@ class _EditOrderState extends State<EditOrder> {
           }).toList();
         });
       }
-    } catch (e) {
-      print('Lỗi khi tải chi tiết đơn hàng: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -172,7 +167,6 @@ class _EditOrderState extends State<EditOrder> {
         );
       }
     } catch (e) {
-      print('Lỗi khi cập nhật đơn hàng: $e');
       if (mounted) {
         _showConfirmationDialog(
           title: 'Lỗi!',
@@ -234,7 +228,7 @@ class _EditOrderState extends State<EditOrder> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextFormField(
-                      key: const Key('store_name_field'), // Thêm key
+                      key: const Key('store_name_field'),
                       controller: _storeNameController,
                       decoration: InputDecoration(
                         labelText: 'Tên cửa hàng',
@@ -252,7 +246,7 @@ class _EditOrderState extends State<EditOrder> {
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      key: const Key('general_note_field'), // Thêm key
+                      key: const Key('general_note_field'),
                       controller: _generalNoteController,
                       maxLines: 3,
                       decoration: InputDecoration(
@@ -331,9 +325,7 @@ class _EditOrderState extends State<EditOrder> {
                         int index = entry.key;
                         item.ServiceOrderItem orderItem = entry.value;
                         return Padding(
-                          key: Key(
-                            orderItem.id ?? 'order_item_${index}',
-                          ), // Thêm key cho Padding
+                          key: Key(orderItem.id ?? 'order_item_$index'),
                           padding: const EdgeInsets.only(bottom: 16.0),
                           child: Card(
                             elevation: 3,

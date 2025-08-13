@@ -1,4 +1,3 @@
-// lib/screens/profile/edit_profile.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -117,7 +116,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void _showSuccessDialog(String message) {
     showDialog(
       context: context,
-      barrierDismissible: false, // Không cho phép đóng dialog khi nhấn ra ngoài
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(

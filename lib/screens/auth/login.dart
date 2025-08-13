@@ -113,9 +113,6 @@ class _LoginState extends State<Login> {
           String actualRole = userData['role'] ?? 'customer';
           bool isActive = userData['isActive'] ?? true;
 
-          print('🔍 Selected role: $selectedRoleEnglish');
-          print('🔍 Actual role: $actualRole');
-
           // Kiểm tra tài khoản có bị vô hiệu hóa không
           if (!isActive) {
             _showErrorDialog(
@@ -199,8 +196,10 @@ class _LoginState extends State<Login> {
                     vertical: 10,
                   ),
                   decoration: BoxDecoration(
+                    // ignore: deprecated_member_use
                     color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
+                    // ignore: deprecated_member_use
                     border: Border.all(color: Colors.white.withOpacity(0.3)),
                   ),
                   child: Row(
