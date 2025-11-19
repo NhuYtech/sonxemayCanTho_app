@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../../services/chat_service.dart';
+import '../../models/chat_message.dart';
 
 class CustomerChatScreen extends StatefulWidget {
   final String customerName;
@@ -11,141 +12,115 @@ class CustomerChatScreen extends StatefulWidget {
   State<CustomerChatScreen> createState() => _CustomerChatScreenState();
 }
 
-class _CustomerChatScreenState extends State<CustomerChatScreen> {
+class _CustomerChatScreenState extends State<CustomerChatScreen>
+    with WidgetsBindingObserver {
+  final ChatService _chatService = ChatService();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  User? _currentUser;
-  String? _chatId;
+  String? _roomId;
+  String? _managerId;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeChat();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _initializeChat() async {
-    final user = _auth.currentUser;
-    if (user == null) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-    _currentUser = user;
-
-    final managerSnapshot = await _firestore
-        .collection('accounts')
-        .where('role', isEqualTo: 'manager')
-        .limit(1)
-        .get();
-
-    if (managerSnapshot.docs.isEmpty) {
-      debugPrint('Không tìm thấy manager');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
-    final managerId = managerSnapshot.docs.first.id;
-
-    // Tìm cuộc trò chuyện hiện có
-    final chatSnapshot = await _firestore
-        .collection('chats')
-        .where('participants', arrayContains: _currentUser!.uid)
-        .get();
-
-    // Tìm cuộc trò chuyện với manager
-    for (var doc in chatSnapshot.docs) {
-      final participants = doc.data()['participants'] as List<dynamic>;
-      if (participants.contains(managerId)) {
-        _chatId = doc.id;
-        break;
-      }
-    }
-
-    // Nếu không tìm thấy, tạo cuộc trò chuyện mới
-    if (_chatId == null) {
-      final newChatDoc = await _firestore.collection('chats').add({
-        'participants': [_currentUser!.uid, managerId],
-        'lastMessage': '',
-        'lastMessageTimestamp': FieldValue.serverTimestamp(),
-      });
-      _chatId = newChatDoc.id;
-    }
-
-    // Đánh dấu tin nhắn của manager là đã đọc
-    if (_chatId != null) {
-      _markMessagesAsRead();
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Mark messages as seen when user is actively viewing
+    if ((state == AppLifecycleState.resumed ||
+            state == AppLifecycleState.inactive) &&
+        _roomId != null &&
+        mounted) {
+      _chatService.markMessagesAsSeen(_roomId!);
     }
   }
 
-  // Phương thức mới để đánh dấu tin nhắn của manager là đã đọc
-  void _markMessagesAsRead() async {
+  void _initializeChat() async {
     try {
-      final messagesSnapshot = await _firestore
-          .collection('chats')
-          .doc(_chatId)
-          .collection('messages')
-          .where('senderId', isNotEqualTo: _currentUser!.uid)
-          .where('read', isEqualTo: false)
+      if (_chatService.currentUserId == null) {
+        debugPrint('User not authenticated');
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vui lòng đăng nhập để chat')),
+          );
+        }
+        return;
+      }
+
+      debugPrint('Finding manager...');
+      // Find manager
+      final managerSnapshot = await _firestore
+          .collection('users')
+          .where('role', isEqualTo: 'manager')
+          .limit(1)
           .get();
 
-      for (var doc in messagesSnapshot.docs) {
-        await doc.reference.update({'read': true});
+      if (managerSnapshot.docs.isEmpty) {
+        debugPrint('Không tìm thấy manager');
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Không tìm thấy quản lý. Vui lòng thử lại sau.'),
+            ),
+          );
+        }
+        return;
       }
-      debugPrint('>>> Đã đánh dấu tin nhắn là đã đọc.');
+
+      _managerId = managerSnapshot.docs.first.id;
+      debugPrint('Manager ID: $_managerId');
+
+      // Create or get room with manager
+      debugPrint('Creating/getting room...');
+      _roomId = await _chatService.createOrGetRoom(_managerId!);
+      debugPrint('Room ID: $_roomId');
+
+      // Mark messages as seen initially and when new messages arrive
+      await _chatService.markMessagesAsSeen(_roomId!);
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      debugPrint('Chat initialized successfully');
     } catch (e) {
-      debugPrint('>>> Lỗi khi đánh dấu tin nhắn là đã đọc: $e');
+      debugPrint('Error initializing chat: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi kết nối: $e')));
+      }
     }
   }
 
   // Gửi tin nhắn
   void _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _chatId == null || _currentUser == null) {
-      return;
-    }
+    if (text.isEmpty || _roomId == null) return;
 
     try {
-      await _firestore
-          .collection('chats')
-          .doc(_chatId)
-          .collection('messages')
-          .add({
-            'senderId': _currentUser!.uid,
-            'text': text,
-            'timestamp': FieldValue.serverTimestamp(),
-            'read': false, // Thêm trường này để theo dõi trạng thái đọc
-          });
-
-      await _firestore.collection('chats').doc(_chatId).update({
-        'lastMessage': text,
-        'lastMessageTimestamp': FieldValue.serverTimestamp(),
-        'hasUnreadMessages':
-            true, // Thông báo có tin nhắn mới cho người quản lý
-      });
+      await _chatService.sendMessage(
+        roomId: _roomId!,
+        content: text,
+        type: MessageType.text,
+      );
 
       _controller.clear();
       _scrollController.animateTo(
@@ -155,6 +130,11 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
       );
     } catch (e) {
       debugPrint('Lỗi khi gửi tin nhắn: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Không thể gửi tin nhắn: $e')));
+      }
     }
   }
 
@@ -168,14 +148,21 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : StreamBuilder<QuerySnapshot>(
-                      stream: _firestore
-                          .collection('chats')
-                          .doc(_chatId)
-                          .collection('messages')
-                          .orderBy('timestamp', descending: true)
-                          .snapshots(),
+                  : _roomId == null
+                  ? const Center(child: Text('Không thể kết nối với cửa hàng'))
+                  : StreamBuilder<List<ChatMessage>>(
+                      stream: _chatService.getRoomMessages(_roomId!),
                       builder: (context, snapshot) {
+                        // Mark as seen when new data arrives
+                        if (snapshot.hasData && _roomId != null && mounted) {
+                          // Use post-frame callback to avoid calling setState during build
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) {
+                              _chatService.markMessagesAsSeen(_roomId!);
+                            }
+                          });
+                        }
+
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Center(
@@ -187,29 +174,28 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                             child: Text('Đã xảy ra lỗi: ${snapshot.error}'),
                           );
                         }
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
                           return const Center(
                             child: Text(
                               'Bắt đầu cuộc trò chuyện với cửa hàng.',
                             ),
                           );
                         }
-                        final messages = snapshot.data!.docs;
+
+                        final messages = snapshot.data!;
                         return ListView.builder(
                           controller: _scrollController,
                           reverse: true,
                           padding: const EdgeInsets.all(12),
                           itemCount: messages.length,
                           itemBuilder: (context, index) {
-                            final messageData =
-                                messages[index].data() as Map<String, dynamic>;
+                            final message = messages[index];
                             final currentUserIsSender =
-                                messageData['senderId'] == _currentUser?.uid;
-                            final timestamp =
-                                messageData['timestamp'] as Timestamp?;
-                            final timeString = timestamp != null
-                                ? DateFormat('HH:mm').format(timestamp.toDate())
-                                : '';
+                                message.senderId == _chatService.currentUserId;
+                            final timeString = DateFormat(
+                              'HH:mm',
+                            ).format(message.timestamp);
+
                             return Align(
                               alignment: currentUserIsSender
                                   ? Alignment.centerRight
@@ -235,7 +221,6 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            // ignore: deprecated_member_use
                                             color: Colors.grey.withOpacity(0.2),
                                             spreadRadius: 1,
                                             blurRadius: 3,
@@ -244,7 +229,7 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                                         ],
                                       ),
                                       child: Text(
-                                        messageData['text'],
+                                        message.content,
                                         style: const TextStyle(fontSize: 15),
                                       ),
                                     ),
@@ -264,9 +249,7 @@ class _CustomerChatScreenState extends State<CustomerChatScreen> {
                                           Icon(
                                             Icons.done_all,
                                             size: 16,
-                                            color:
-                                                (messageData['read'] as bool? ??
-                                                    false)
+                                            color: message.seen
                                                 ? Colors.blue
                                                 : Colors.grey,
                                           ),

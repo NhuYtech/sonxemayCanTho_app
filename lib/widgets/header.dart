@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 class Header extends StatelessWidget implements PreferredSizeWidget {
   final String name;
   final Color backgroundColor;
+  final bool showSearch;
+  final String? subtitle;
 
   const Header({
     super.key,
     required this.name,
     this.backgroundColor = const Color(0xFFC1473B),
+    this.showSearch = true,
+    this.subtitle,
   });
 
   @override
@@ -51,36 +55,46 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
                 // Biểu tượng chuông thông báo đã được xóa
               ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () {},
+            if (showSearch) ...[
+              const SizedBox(height: 16),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: 'Tìm kiếm...',
+                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                    onPressed: () {},
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Colors.blue, width: 2),
+                  ),
                 ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                onChanged: (value) {},
+              ),
+            ] else if (subtitle != null) ...[
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  subtitle!,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
-              onChanged: (value) {},
-            ),
+            ],
           ],
         ),
       ),

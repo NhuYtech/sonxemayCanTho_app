@@ -6,6 +6,7 @@ import '../profile/profile.dart';
 import '../order/order.dart';
 import '../../widgets/header.dart';
 import '../dashboard.dart';
+import 'package:sonxemaycantho/screens/fire_alert/fire_alert_page.dart';
 
 class ManagerHome extends StatefulWidget {
   final String name;
@@ -49,6 +50,7 @@ class _ManagerHomeState extends State<ManagerHome> {
       ),
       ManagerOrder(name: widget.name),
       ChatList(managerName: widget.name),
+      FireAlert(),
       Profile(name: widget.name, role: 'manager'),
     ];
   }

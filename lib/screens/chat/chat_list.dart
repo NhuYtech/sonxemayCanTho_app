@@ -1,11 +1,10 @@
-// lib/screens/customer_support/chat.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:sonxemaycantho/screens/chat/customer_support.dart';
+import '../../services/chat_service.dart';
+import '../../models/chat_room.dart';
 
-// Màn hình hiển thị danh sách các cuộc trò chuyện
+/// Màn hình hiển thị danh sách các cuộc trò chuyện
 class ChatList extends StatefulWidget {
   final String managerName;
   const ChatList({super.key, required this.managerName});
@@ -15,157 +14,91 @@ class ChatList extends StatefulWidget {
 }
 
 class _ChatListState extends State<ChatList> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _currentUser;
-  bool _isLoading = true;
+  final ChatService _chatService = ChatService();
+  final Map<String, String> _userNameCache = {};
 
-  @override
-  void initState() {
-    super.initState();
-    _loadCurrentUser();
+  /// Lấy tên người dùng với cache
+  Future<String> _getUserName(String userId) async {
+    if (_userNameCache.containsKey(userId)) {
+      return _userNameCache[userId]!;
+    }
+
+    final name = await _chatService.getUserName(userId);
+    _userNameCache[userId] = name;
+    return name;
   }
 
-  // Lấy thông tin người dùng hiện tại
-  void _loadCurrentUser() {
-    _currentUser = _auth.currentUser;
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-    if (_currentUser == null) {
-      debugPrint('>>> ChatList: No user signed in.');
-      return;
-    }
-    debugPrint('>>> ChatList: Current user ID: ${_currentUser!.uid}');
-  }
-
-  // Lấy tên của người dùng từ Firestore dựa trên UID
-  Future<String> _getUserName(String uid) async {
+  /// Xóa cuộc trò chuyện
+  Future<void> _deleteRoom(String roomId) async {
     try {
-      final userDoc = await _firestore.collection('users').doc(uid).get();
-      if (userDoc.exists &&
-          userDoc.data() != null &&
-          userDoc.data()!['fullName'] != null) {
-        return userDoc.data()!['fullName'];
-      }
-
-      final customerDoc = await _firestore
-          .collection('customers')
-          .doc(uid)
-          .get();
-      if (customerDoc.exists &&
-          customerDoc.data() != null &&
-          customerDoc.data()!['name'] != null) {
-        return customerDoc.data()!['name'];
+      await _chatService.deleteRoom(roomId);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Đã xóa cuộc trò chuyện')));
       }
     } catch (e) {
-      debugPrint('Lỗi khi lấy tên người dùng: $e');
-    }
-
-    return 'Người dùng không xác định';
-  }
-
-  // Hàm xóa cuộc trò chuyện
-  Future<void> _deleteChat(String chatId) async {
-    try {
-      // Xóa tất cả tin nhắn trong subcollection 'messages'
-      final messages = await _firestore
-          .collection('chats')
-          .doc(chatId)
-          .collection('messages')
-          .get();
-      for (var doc in messages.docs) {
-        await doc.reference.delete();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi xóa: $e')));
       }
-
-      // Sau đó xóa tài liệu cuộc trò chuyện chính
-      await _firestore.collection('chats').doc(chatId).delete();
-      debugPrint('>>> Đã xóa cuộc trò chuyện: $chatId');
-    } catch (e) {
-      debugPrint('>>> Lỗi khi xóa cuộc trò chuyện: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _currentUser == null) {
-      return const Center(child: CircularProgressIndicator());
+    final currentUserId = _chatService.currentUserId;
+
+    if (currentUserId == null) {
+      return const Center(child: Text('Vui lòng đăng nhập để sử dụng chat'));
     }
 
     return Scaffold(
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('chats')
-            .where('participants', arrayContains: _currentUser!.uid)
-            .orderBy('lastMessageTimestamp', descending: true)
-            .snapshots(),
-        builder: (context, chatSnapshot) {
-          if (chatSnapshot.connectionState == ConnectionState.waiting) {
+      body: StreamBuilder<List<ChatRoom>>(
+        stream: _chatService.getUserRooms(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (chatSnapshot.hasError) {
-            return Center(child: Text('Đã xảy ra lỗi: ${chatSnapshot.error}'));
-          }
-          if (!chatSnapshot.hasData || chatSnapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('Chưa có cuộc trò chuyện nào.'));
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Đã xảy ra lỗi: ${snapshot.error}'));
           }
 
-          final chatDocs = chatSnapshot.data!.docs;
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.chat_bubble_outline, size: 80, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Chưa có cuộc trò chuyện nào',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
 
-          return FutureBuilder(
-            future: Future.wait(
-              chatDocs.map((chatDoc) async {
-                final chatData = chatDoc.data() as Map<String, dynamic>;
-                final otherParticipantId = chatData['participants'].firstWhere(
-                  (id) => id != _currentUser!.uid,
-                );
+          final rooms = snapshot.data!;
 
-                final chatPartnerName = await _getUserName(otherParticipantId);
-                return {
-                  'chatDoc': chatDoc,
-                  'chatData': chatData,
-                  'otherParticipantId': otherParticipantId,
-                  'chatPartnerName': chatPartnerName,
-                };
-              }),
-            ),
-            builder: (context, AsyncSnapshot<List<dynamic>> futureSnapshot) {
-              if (futureSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (futureSnapshot.hasError) {
-                return Center(
-                  child: Text('Đã xảy ra lỗi: ${futureSnapshot.error}'),
-                );
-              }
-              if (!futureSnapshot.hasData) {
-                return const Center(child: Text('Không tìm thấy dữ liệu.'));
-              }
+          return ListView.builder(
+            itemCount: rooms.length,
+            itemBuilder: (context, index) {
+              final room = rooms[index];
+              final otherUserId = room.getOtherParticipant(currentUserId);
+              final unreadCount = room.unreadCount[currentUserId] ?? 0;
+              final hasUnread = unreadCount > 0;
 
-              final chatItems = futureSnapshot.data!;
-
-              return ListView.builder(
-                itemCount: chatItems.length,
-                itemBuilder: (context, index) {
-                  final item = chatItems[index];
-                  final chatDoc = item['chatDoc'] as DocumentSnapshot;
-                  final chatData = item['chatData'] as Map<String, dynamic>;
-                  final otherParticipantId =
-                      item['otherParticipantId'] as String;
-                  final chatPartnerName = item['chatPartnerName'] as String;
-
-                  final lastMessageTimestamp =
-                      chatData['lastMessageTimestamp'] as Timestamp?;
-                  final lastMessageTime = lastMessageTimestamp != null
-                      ? DateFormat(
-                          'HH:mm',
-                        ).format(lastMessageTimestamp.toDate())
-                      : '';
+              return FutureBuilder<String>(
+                future: _getUserName(otherUserId),
+                builder: (context, nameSnapshot) {
+                  final chatPartnerName = nameSnapshot.data ?? 'Đang tải...';
 
                   return Dismissible(
-                    key: Key(chatDoc.id),
+                    key: Key(room.roomId),
                     background: Container(
                       color: Colors.red,
                       alignment: Alignment.centerRight,
@@ -173,45 +106,127 @@ class _ChatListState extends State<ChatList> {
                       child: const Icon(Icons.delete, color: Colors.white),
                     ),
                     direction: DismissDirection.endToStart,
+                    confirmDismiss: (direction) async {
+                      return await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Xác nhận xóa'),
+                          content: const Text(
+                            'Bạn có chắc muốn xóa cuộc trò chuyện này?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Hủy'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text(
+                                'Xóa',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                     onDismissed: (direction) {
-                      _deleteChat(chatDoc.id);
+                      _deleteRoom(room.roomId);
                     },
                     child: Card(
-                      elevation: 2,
+                      elevation: hasUnread ? 4 : 2,
                       margin: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 8,
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
+                        side: hasUnread
+                            ? const BorderSide(color: Colors.blue, width: 2)
+                            : BorderSide.none,
                       ),
                       child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Colors.red,
-                          child: Icon(Icons.person, color: Colors.white),
+                        leading: Stack(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: hasUnread
+                                  ? Colors.blue
+                                  : const Color(0xFFC1473B),
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                              ),
+                            ),
+                            if (hasUnread)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 20,
+                                    minHeight: 20,
+                                  ),
+                                  child: Text(
+                                    unreadCount > 99 ? '99+' : '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                         title: Text(
                           chatPartnerName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
+                          style: TextStyle(
+                            fontWeight: hasUnread
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             fontSize: 17,
                           ),
                         ),
                         subtitle: Text(
-                          chatData['lastMessage'] ?? 'Chưa có tin nhắn nào.',
+                          room.lastMessage.isEmpty
+                              ? 'Chưa có tin nhắn nào.'
+                              : room.lastMessage,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: hasUnread
+                                ? Colors.black87
+                                : Colors.grey[600],
                             fontSize: 14,
+                            fontWeight: hasUnread
+                                ? FontWeight.w500
+                                : FontWeight.normal,
                           ),
                         ),
-                        trailing: Text(
-                          lastMessageTime,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[500],
-                          ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              DateFormat('HH:mm').format(room.lastTime),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: hasUnread
+                                    ? Colors.blue
+                                    : Colors.grey[500],
+                                fontWeight: hasUnread
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                            if (hasUnread) const SizedBox(height: 4),
+                          ],
                         ),
                         onTap: () {
                           Navigator.push(
@@ -219,8 +234,8 @@ class _ChatListState extends State<ChatList> {
                             MaterialPageRoute(
                               builder: (context) => CustomerSupport(
                                 name: chatPartnerName,
-                                chatId: chatDoc.id,
-                                customerId: otherParticipantId,
+                                roomId: room.roomId,
+                                otherUserId: otherUserId,
                               ),
                             ),
                           );

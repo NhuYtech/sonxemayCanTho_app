@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../widgets/header.dart';
 import '../profile/profile.dart';
+import '../../services/chat_service.dart';
 import 'customer_chat.dart';
 
 class CustomerHome extends StatefulWidget {
@@ -16,6 +17,7 @@ class CustomerHome extends StatefulWidget {
 class _CustomerHomeState extends State<CustomerHome> {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
+  final ChatService _chatService = ChatService();
 
   @override
   void initState() {
@@ -43,10 +45,55 @@ class _CustomerHomeState extends State<CustomerHome> {
         },
         selectedItemColor: Colors.red,
         unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Tin nhắn'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Tài khoản'),
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Trang chủ',
+          ),
+          BottomNavigationBarItem(
+            icon: StreamBuilder<int>(
+              stream: _chatService.getTotalUnreadCountStream(),
+              builder: (context, snapshot) {
+                final unreadCount = snapshot.data ?? 0;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.chat),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: -8,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            unreadCount > 9 ? '9+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            label: 'Tin nhắn',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Tài khoản',
+          ),
         ],
       ),
     );

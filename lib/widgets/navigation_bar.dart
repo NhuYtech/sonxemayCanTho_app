@@ -1,7 +1,6 @@
 // lib/widgets/bottom_navbar.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/chat_service.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int selectedIndex;
@@ -18,29 +17,7 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  int _unreadMessagesCount = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUnreadMessagesCount();
-  }
-
-  void _fetchUnreadMessagesCount() {
-    FirebaseFirestore.instance
-        .collection('chats')
-        .where(
-          'participants',
-          arrayContains: FirebaseAuth.instance.currentUser?.uid,
-        )
-        .where('hasUnreadMessages', isEqualTo: true)
-        .snapshots()
-        .listen((snapshot) {
-          setState(() {
-            _unreadMessagesCount = snapshot.docs.length;
-          });
-        });
-  }
+  final ChatService _chatService = ChatService();
 
   @override
   Widget build(BuildContext context) {
@@ -58,40 +35,55 @@ class _BottomNavBarState extends State<BottomNavBar> {
           icon: Icon(Icons.list),
           label: 'Đơn hàng',
         ),
+
         BottomNavigationBarItem(
-          icon: Stack(
-            children: [
-              const Icon(Icons.chat),
-              if (_unreadMessagesCount > 0)
-                Positioned(
-                  right: -6,
-                  top: -6,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.yellow,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 20,
-                      minHeight: 20,
-                    ),
-                    child: Text(
-                      '$_unreadMessagesCount',
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+          icon: StreamBuilder<int>(
+            stream: _chatService.getTotalUnreadCountStream(),
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.data ?? 0;
+
+              return Stack(
+                children: [
+                  const Icon(Icons.chat),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: -6,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.yellow,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white, width: 1.5),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : '$unreadCount',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ),
-            ],
+                ],
+              );
+            },
           ),
           label: 'CSKH',
         ),
+
+        const BottomNavigationBarItem(
+          icon: Icon(Icons.local_fire_department_outlined),
+          activeIcon: Icon(Icons.local_fire_department, color: Colors.red),
+          label: 'Cảnh báo',
+        ),
+
         const BottomNavigationBarItem(
           icon: Icon(Icons.person),
           label: 'Cá nhân',

@@ -218,9 +218,6 @@ class _StaffHomeState extends State<StaffHome> {
 
       totalStockOrders = stockOrdersSnapshot.docs.length;
 
-      if (stockOrdersSnapshot.docs.isEmpty) {
-      } else {}
-
       if (mounted) {
         setState(() {
           _totalStockOrders = '$totalStockOrders đơn';

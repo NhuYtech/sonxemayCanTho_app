@@ -1,19 +1,20 @@
-// lib/screens/chat/customer_support.dart
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
+import '../../services/chat_service.dart';
+import '../../services/presence_service.dart';
+import '../../models/chat_message.dart';
 
 class CustomerSupport extends StatefulWidget {
   final String name;
-  final String chatId;
-  final String customerId;
+  final String roomId;
+  final String otherUserId;
 
   const CustomerSupport({
     super.key,
     required this.name,
-    required this.chatId,
-    required this.customerId,
+    required this.roomId,
+    required this.otherUserId,
   });
 
   @override
@@ -21,86 +22,42 @@ class CustomerSupport extends StatefulWidget {
 }
 
 class _CustomerSupportState extends State<CustomerSupport> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ChatService _chatService = ChatService();
+  final PresenceService _presenceService = PresenceService();
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  User? _currentUser;
-  late Stream<QuerySnapshot> _messageStream;
+  Timer? _typingTimer;
 
   @override
   void initState() {
     super.initState();
-    _currentUser = _auth.currentUser;
-    _messageStream = _firestore
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .orderBy('timestamp', descending: true)
-        .snapshots();
-
     // Mark messages as read when the chat screen is opened
-    _markMessagesAsRead();
+    _chatService.markMessagesAsSeen(widget.roomId);
+    // Update online status
+    _presenceService.updateUserPresence(isOnline: true);
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _typingTimer?.cancel();
+    _chatService.setTyping(widget.roomId, false);
+    _presenceService.updateUserPresence(isOnline: false);
     super.dispose();
-  }
-
-  // Cập nhật trạng thái 'read' cho các tin nhắn chưa đọc
-  void _markMessagesAsRead() async {
-    final unreadMessages = await _firestore
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .where('read', isEqualTo: false)
-        .get();
-
-    for (var message in unreadMessages.docs) {
-      if (message.data()['senderId'] != _currentUser!.uid) {
-        await message.reference.update({'read': true});
-      }
-    }
-
-    // Update the hasUnreadMessages field in the parent chat document
-    final remainingUnreadMessages = await _firestore
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .where('read', isEqualTo: false)
-        .get();
-
-    await _firestore.collection('chats').doc(widget.chatId).update({
-      'hasUnreadMessages': remainingUnreadMessages.docs.isNotEmpty,
-    });
   }
 
   void _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _currentUser == null) {
-      return;
-    }
+    if (text.isEmpty) return;
 
     try {
-      await _firestore
-          .collection('chats')
-          .doc(widget.chatId)
-          .collection('messages')
-          .add({
-            'senderId': _currentUser!.uid,
-            'text': text,
-            'timestamp': FieldValue.serverTimestamp(),
-            'read': false,
-          });
-
-      await _firestore.collection('chats').doc(widget.chatId).update({
-        'lastMessage': text,
-        'lastMessageTimestamp': FieldValue.serverTimestamp(),
-      });
+      await _chatService.sendMessage(
+        roomId: widget.roomId,
+        content: text,
+        type: MessageType.text,
+      );
 
       _controller.clear();
       _scrollController.animateTo(
@@ -109,175 +66,271 @@ class _CustomerSupportState extends State<CustomerSupport> {
         curve: Curves.easeOut,
       );
     } catch (e) {
-      debugPrint('Lỗi khi gửi tin nhắn: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi gửi tin nhắn: $e')));
+      }
     }
+  }
+
+  void _startTyping() {
+    _chatService.setTyping(widget.roomId, true);
+
+    _typingTimer?.cancel();
+    _typingTimer = Timer(const Duration(milliseconds: 1500), () {
+      _chatService.setTyping(widget.roomId, false);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Chat với ${widget.name}'),
-        backgroundColor: Color(0xFFC1473B),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.name),
+            StreamBuilder<bool>(
+              stream: _chatService.getTypingStatus(
+                widget.roomId,
+                widget.otherUserId,
+              ),
+              builder: (context, snapshot) {
+                if (snapshot.data == true) {
+                  return const Text(
+                    'Đang nhập...',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFC1473B),
         foregroundColor: Colors.white,
       ),
       body: SafeArea(
         child: Column(
           children: [
             Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _messageStream,
+              child: StreamBuilder<List<ChatMessage>>(
+                stream: _chatService.getRoomMessages(widget.roomId),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
+
                   if (snapshot.hasError) {
                     return Center(
                       child: Text('Đã xảy ra lỗi: ${snapshot.error}'),
                     );
                   }
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(child: Text('Chưa có tin nhắn nào.'));
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline,
+                            size: 80,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 16),
+                          Text('Chưa có tin nhắn nào'),
+                        ],
+                      ),
+                    );
                   }
 
-                  final messages = snapshot.data!.docs;
+                  final messages = snapshot.data!;
                   return ListView.builder(
                     controller: _scrollController,
                     reverse: true,
                     padding: const EdgeInsets.all(12),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
-                      final messageData =
-                          messages[index].data() as Map<String, dynamic>;
-                      final isCurrentUser =
-                          messageData['senderId'] == _currentUser?.uid;
-                      final timestamp = messageData['timestamp'] as Timestamp?;
-                      final timeString = timestamp != null
-                          ? DateFormat('HH:mm').format(timestamp.toDate())
-                          : '';
-
-                      return Align(
-                        alignment: isCurrentUser
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0),
-                          child: Column(
-                            crossAxisAlignment: isCurrentUser
-                                ? CrossAxisAlignment.end
-                                : CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                constraints: const BoxConstraints(
-                                  maxWidth: 280,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isCurrentUser
-                                      ? const Color(0xFFB3E5FC)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      // ignore: deprecated_member_use
-                                      color: Colors.grey.withOpacity(0.2),
-                                      spreadRadius: 1,
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Text(
-                                  messageData['text'],
-                                  style: const TextStyle(fontSize: 15),
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    timeString,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  if (isCurrentUser)
-                                    Icon(
-                                      Icons.done_all,
-                                      size: 16,
-                                      color:
-                                          (messageData['read'] as bool? ??
-                                              false)
-                                          ? Colors.blue
-                                          : Colors.grey,
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
+                      final message = messages[index];
+                      return _buildMessageBubble(message);
                     },
                   );
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: InputDecoration(
-                        hintText: 'Nhập tin nhắn...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                        ),
-                      ),
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
+            _buildInputArea(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Build message bubble based on type
+  Widget _buildMessageBubble(ChatMessage message) {
+    final isCurrentUser = message.senderId == _chatService.currentUserId;
+
+    // System or Warning messages
+    if (message.type == MessageType.system ||
+        message.type == MessageType.warning) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: message.type == MessageType.warning
+                  ? Colors.orange.shade100
+                  : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  message.type == MessageType.warning
+                      ? Icons.warning
+                      : Icons.info,
+                  size: 16,
+                  color: message.type == MessageType.warning
+                      ? Colors.orange
+                      : Colors.grey,
+                ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    message.content,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: _sendMessage,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            // ignore: deprecated_member_use
-                            color: Colors.red.withOpacity(0.4),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.send,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Regular user messages
+    return Align(
+      alignment: isCurrentUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Column(
+          crossAxisAlignment: isCurrentUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(maxWidth: 280),
+              decoration: BoxDecoration(
+                color: isCurrentUser ? const Color(0xFFB3E5FC) : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 1,
+                    blurRadius: 3,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
+              child:
+                  message.type == MessageType.image && message.imageUrl != null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            message.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Text('Không thể tải hình ảnh');
+                            },
+                          ),
+                        ),
+                        if (message.content.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              message.content,
+                              style: const TextStyle(fontSize: 15),
+                            ),
+                          ),
+                      ],
+                    )
+                  : Text(message.content, style: const TextStyle(fontSize: 15)),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  DateFormat('HH:mm').format(message.timestamp),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(width: 4),
+                if (isCurrentUser)
+                  Icon(
+                    Icons.done_all,
+                    size: 16,
+                    color: message.seen ? Colors.blue : Colors.grey,
+                  ),
+              ],
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Build input area
+  Widget _buildInputArea() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: InputDecoration(
+                hintText: 'Nhập tin nhắn...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey[200],
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+              ),
+              onChanged: (_) => _startTyping(),
+              onSubmitted: (_) => _sendMessage(),
+            ),
+          ),
+          const SizedBox(width: 12),
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFC1473B),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.4),
+                    spreadRadius: 1,
+                    blurRadius: 5,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.send, color: Colors.white, size: 24),
+            ),
+          ),
+        ],
       ),
     );
   }
