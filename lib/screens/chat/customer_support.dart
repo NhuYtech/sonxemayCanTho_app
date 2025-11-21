@@ -229,6 +229,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
+                    // ignore: deprecated_member_use
                     color: Colors.grey.withOpacity(0.2),
                     spreadRadius: 1,
                     blurRadius: 3,
@@ -320,6 +321,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
+                    // ignore: deprecated_member_use
                     color: Colors.red.withOpacity(0.4),
                     spreadRadius: 1,
                     blurRadius: 5,

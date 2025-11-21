@@ -118,14 +118,14 @@ class MessageService {
 
       if (fcmToken != null) {
         // Gửi notification qua FCM
+        // ignore: deprecated_member_use
         await FirebaseMessaging.instance.sendMessage(
           to: fcmToken,
           data: {'type': 'message', 'content': messageContent},
         );
       }
-    } catch (e) {
-      print('Error sending notification: $e');
-    }
+      // ignore: empty_catches
+    } catch (e) {}
   }
 
   // Stream để lắng nghe tin nhắn mới

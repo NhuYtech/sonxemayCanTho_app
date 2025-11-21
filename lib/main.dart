@@ -101,7 +101,9 @@ class AuthWrapper extends StatelessWidget {
             .get();
 
         if (!userDoc.exists) {
-          debugPrint('User document does not exist in both collections, signing out...');
+          debugPrint(
+            'User document does not exist in both collections, signing out...',
+          );
           await FirebaseAuth.instance.signOut();
           return const RoleSelection();
         }
@@ -158,16 +160,48 @@ class _LoadingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFC1473B),
+      backgroundColor: Colors.white,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const CircularProgressIndicator(color: Colors.white),
+            // Logo tròn với viền vàng
+            Container(
+              width: 220,
+              height: 220,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFC1473B),
+                border: Border.all(color: const Color(0xFFFFD700), width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  'assets/logo/logoapp.png',
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFC1473B)),
+              strokeWidth: 3,
+            ),
             const SizedBox(height: 20),
             Text(
               message,
-              style: const TextStyle(color: Colors.white, fontSize: 16),
+              style: const TextStyle(
+                color: Color(0xFFC1473B),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
