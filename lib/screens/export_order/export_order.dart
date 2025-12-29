@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:sonxemaycantho/models/service_order.dart';
@@ -50,8 +51,11 @@ class _ExportOrderState extends State<ExportOrder> {
       setState(() {
         _serviceOrders = snapshot.docs;
       });
-      // ignore: empty_catches
-    } catch (e) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error fetching service orders: $e');
+      }
+    }
   }
 
   Future<void> _calculateAndFillQuantity(String serviceOrderId) async {

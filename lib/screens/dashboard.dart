@@ -26,110 +26,168 @@ class Dashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      children: [
-        _buildStatCard(
-          'Tổng đơn nhập:',
-          stockQuantity,
-          Icons.warehouse,
-          const Color(0xFFFFFDE7),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.grey[50]!, Colors.white],
         ),
-        _buildStatCard(
-          'Tổng đơn xuất:',
-          totalOrders,
-          Icons.shopping_cart,
-          const Color(0xFFE8F5E9),
-        ),
-        _buildStatCard(
-          'Tổng tồn kho:',
-          totalStockOrders,
-          Icons.inventory_2,
-          const Color(0xFFFFEBEE),
-        ),
-        _buildStatCard(
-          'Danh sách nhân viên:',
-          staffCount,
-          Icons.groups,
-          const Color.fromARGB(255, 236, 220, 211),
-          onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (context) => const StaffList()));
-          },
-        ),
-      ],
+      ),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        children: [
+          _buildStatCard(
+            context,
+            'Tổng đơn nhập',
+            stockQuantity,
+            Icons.warehouse_rounded,
+            const LinearGradient(
+              colors: [Color(0xFFFFF9C4), Color(0xFFFFF59D)],
+            ),
+            Icons.trending_up,
+          ),
+          _buildStatCard(
+            context,
+            'Tổng đơn xuất',
+            totalOrders,
+            Icons.shopping_cart_rounded,
+            const LinearGradient(
+              colors: [Color(0xFFC8E6C9), Color(0xFFA5D6A7)],
+            ),
+            Icons.local_shipping_rounded,
+          ),
+          _buildStatCard(
+            context,
+            'Tổng tồn kho',
+            totalStockOrders,
+            Icons.inventory_2_rounded,
+            const LinearGradient(
+              colors: [Color(0xFFFFCDD2), Color(0xFFEF9A9A)],
+            ),
+            Icons.storage_rounded,
+          ),
+          _buildStatCard(
+            context,
+            'Danh sách nhân viên',
+            staffCount,
+            Icons.groups_rounded,
+            const LinearGradient(
+              colors: [Color(0xFFD7CCC8), Color(0xFFBCAAA4)],
+            ),
+            Icons.arrow_forward_ios_rounded,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const StaffList()),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildStatCard(
+    BuildContext context,
     String title,
     String value,
     IconData icon,
-    Color color, {
+    Gradient gradient,
+    IconData trailingIcon, {
     bool isHighlighted = false,
     VoidCallback? onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-          border: isHighlighted
-              ? Border.all(color: Colors.blue, width: 2)
-              : null,
-          boxShadow: [
-            BoxShadow(
-              // ignore: deprecated_member_use
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 2),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(20),
+              border: isHighlighted
+                  ? Border.all(color: Colors.blue, width: 2)
+                  : null,
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 28, color: Colors.black),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (isLoading && title.contains('đơn nhập'))
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else
-                        Expanded(
-                          child: Text(
-                            value,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
                     ],
                   ),
-                ],
-              ),
+                  child: Icon(icon, size: 32, color: Colors.black87),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          if (isLoading && title.contains('đơn nhập'))
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.black87,
+                              ),
+                            )
+                          else
+                            Expanded(
+                              child: Text(
+                                value,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(trailingIcon, color: Colors.black45, size: 24),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

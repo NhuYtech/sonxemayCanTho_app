@@ -21,74 +21,104 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: widget.selectedIndex,
-      selectedItemColor: Colors.red,
-      unselectedItemColor: Colors.black,
-      onTap: widget.onItemTapped,
-      items: [
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Trang chủ',
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: widget.selectedIndex,
+        selectedItemColor: const Color(0xFFC1473B),
+        unselectedItemColor: Colors.grey[600],
+        onTap: widget.onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedFontSize: 12,
+        unselectedFontSize: 11,
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
         ),
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.list),
-          label: 'Đơn hàng',
-        ),
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home_rounded),
+            label: 'Trang chủ',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long_outlined),
+            activeIcon: Icon(Icons.receipt_long_rounded),
+            label: 'Đơn hàng',
+          ),
 
-        BottomNavigationBarItem(
-          icon: StreamBuilder<int>(
-            stream: _chatService.getTotalUnreadCountStream(),
-            builder: (context, snapshot) {
-              final unreadCount = snapshot.data ?? 0;
+          BottomNavigationBarItem(
+            icon: StreamBuilder<int>(
+              stream: _chatService.getTotalUnreadCountStream(),
+              builder: (context, snapshot) {
+                final unreadCount = snapshot.data ?? 0;
 
-              return Stack(
-                children: [
-                  const Icon(Icons.chat),
-                  if (unreadCount > 0)
-                    Positioned(
-                      right: -6,
-                      top: -6,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.yellow,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 1.5),
-                        ),
-                        constraints: const BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Text(
-                          unreadCount > 99 ? '99+' : '$unreadCount',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      widget.selectedIndex == 2
+                          ? Icons.chat_bubble_rounded
+                          : Icons.chat_bubble_outline_rounded,
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: -8,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF6B6B),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withValues(alpha: 0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
+                          constraints: const BoxConstraints(
+                            minWidth: 18,
+                            minHeight: 18,
+                          ),
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
+            label: 'CSKH',
           ),
-          label: 'CSKH',
-        ),
 
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.local_fire_department_outlined),
-          activeIcon: Icon(Icons.local_fire_department, color: Colors.red),
-          label: 'Cảnh báo',
-        ),
-
-        const BottomNavigationBarItem(
-          icon: Icon(Icons.person),
-          label: 'Cá nhân',
-        ),
-      ],
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline_rounded),
+            activeIcon: Icon(Icons.person_rounded),
+            label: 'Cá nhân',
+          ),
+        ],
+      ),
     );
   }
 }

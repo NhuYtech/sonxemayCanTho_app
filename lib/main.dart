@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -20,7 +21,9 @@ void main() async {
       );
     }
   } catch (e) {
-    debugPrint('Firebase initialization error: $e');
+    if (kDebugMode) {
+      debugPrint('Firebase initialization error: $e');
+    }
   }
 
   runApp(const MyApp());
@@ -65,9 +68,11 @@ class AuthWrapper extends StatelessWidget {
               }
 
               if (homeSnapshot.hasError) {
-                debugPrint(
-                  'Error determining home screen: ${homeSnapshot.error}',
-                );
+                if (kDebugMode) {
+                  debugPrint(
+                    'Error determining home screen: ${homeSnapshot.error}',
+                  );
+                }
                 FirebaseAuth.instance.signOut();
                 return const RoleSelection();
               }
@@ -101,9 +106,11 @@ class AuthWrapper extends StatelessWidget {
             .get();
 
         if (!userDoc.exists) {
-          debugPrint(
-            'User document does not exist in both collections, signing out...',
-          );
+          if (kDebugMode) {
+            debugPrint(
+              'User document does not exist in both collections, signing out...',
+            );
+          }
           await FirebaseAuth.instance.signOut();
           return const RoleSelection();
         }
@@ -112,7 +119,9 @@ class AuthWrapper extends StatelessWidget {
       }
 
       if (userData == null) {
-        debugPrint('User data is null, signing out...');
+        if (kDebugMode) {
+          debugPrint('User data is null, signing out...');
+        }
         await FirebaseAuth.instance.signOut();
         return const RoleSelection();
       }
@@ -123,7 +132,9 @@ class AuthWrapper extends StatelessWidget {
       final bool isActive = userData['isActive'] ?? true;
 
       if (!isActive) {
-        debugPrint('User account is inactive, signing out...');
+        if (kDebugMode) {
+          debugPrint('User account is inactive, signing out...');
+        }
         await FirebaseAuth.instance.signOut();
         return const _ErrorScreen(
           message:
@@ -133,20 +144,28 @@ class AuthWrapper extends StatelessWidget {
 
       switch (role.toLowerCase()) {
         case 'manager':
-          debugPrint('Redirecting to ManagerHome for user: $fullName');
+          if (kDebugMode) {
+            debugPrint('Redirecting to ManagerHome for user: $fullName');
+          }
           return ManagerHome(name: fullName);
 
         case 'staff':
-          debugPrint('Redirecting to StaffHome for user: $fullName');
+          if (kDebugMode) {
+            debugPrint('Redirecting to StaffHome for user: $fullName');
+          }
           return StaffHome(name: fullName);
 
         case 'customer':
         default:
-          debugPrint('Redirecting to CustomerHome for user: $fullName');
+          if (kDebugMode) {
+            debugPrint('Redirecting to CustomerHome for user: $fullName');
+          }
           return CustomerHome(name: fullName);
       }
     } catch (e) {
-      debugPrint('Error determining home screen: $e');
+      if (kDebugMode) {
+        debugPrint('Error determining home screen: $e');
+      }
       await FirebaseAuth.instance.signOut();
       return const RoleSelection();
     }
@@ -176,7 +195,7 @@ class _LoadingScreen extends StatelessWidget {
                 border: Border.all(color: const Color(0xFFFFD700), width: 4),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

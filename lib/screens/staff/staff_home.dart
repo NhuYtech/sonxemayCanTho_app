@@ -120,9 +120,10 @@ class _StaffHomeState extends State<StaffHome> {
               if (foundCollection) break;
             }
           }
-        } catch (e)
-        // ignore: empty_catches
-        {}
+        } catch (e) {
+          // Tĩnh lặng bỏ qua collection không tồn tại
+          continue;
+        }
       }
 
       if (mounted) {
@@ -187,9 +188,10 @@ class _StaffHomeState extends State<StaffHome> {
               if (foundCollection) break;
             }
           }
-        } catch (e)
-        // ignore: empty_catches
-        {}
+        } catch (e) {
+          // Tỉnh lặng bỏ qua collection không tồn tại
+          continue;
+        }
       }
 
       if (mounted) {
@@ -250,8 +252,7 @@ class _StaffHomeState extends State<StaffHome> {
         color: const Color(0xFFC1473B),
         boxShadow: [
           BoxShadow(
-            // ignore: deprecated_member_use
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 10,
             offset: const Offset(0, 1),
@@ -431,7 +432,7 @@ class _StaffDashboardContent extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 2),

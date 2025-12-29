@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum MessageType { text, image, system, warning }
+enum MessageType { text, image, system }
 
 class ChatMessage {
   final String messageId;
@@ -44,8 +44,6 @@ class ChatMessage {
           return MessageType.image;
         case 'system':
           return MessageType.system;
-        case 'warning':
-          return MessageType.warning;
         default:
           return MessageType.text;
       }
@@ -107,21 +105,6 @@ class ChatMessage {
       senderId: 'system',
       content: content,
       type: MessageType.system,
-      timestamp: timestamp ?? DateTime.now(),
-      seen: true,
-    );
-  }
-
-  static ChatMessage createWarningMessage({
-    required String messageId,
-    required String content,
-    DateTime? timestamp,
-  }) {
-    return ChatMessage(
-      messageId: messageId,
-      senderId: 'system',
-      content: content,
-      type: MessageType.warning,
       timestamp: timestamp ?? DateTime.now(),
       seen: true,
     );

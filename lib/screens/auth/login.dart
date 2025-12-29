@@ -197,10 +197,12 @@ class _LoginState extends State<Login> {
                   ),
                   decoration: BoxDecoration(
                     // ignore: deprecated_member_use
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                     // ignore: deprecated_member_use
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

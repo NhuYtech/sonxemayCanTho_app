@@ -61,7 +61,7 @@ class CustomerOrder extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             // ignore: deprecated_member_use
-            color: Colors.grey.withOpacity(0.3),
+            color: Colors.grey.withValues(alpha: 0.3),
             spreadRadius: 1.5,
             blurRadius: 5,
             offset: const Offset(0, 3),

@@ -174,13 +174,10 @@ class _CustomerEditState extends State<CustomerEdit> {
         );
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('Lỗi khi cập nhật đơn hàng: $e');
       if (mounted) {
         _showConfirmationDialog(
           title: 'Lỗi!',
-          content:
-              'Đã xảy ra lỗi khi cập nhật đơn hàng. Vui lòng thử lại. Lỗi: $e',
+          content: 'Đã xảy ra lỗi khi cập nhật đơn hàng. Vui lòng thử lại.',
           isSuccess: false,
         );
       }

@@ -170,9 +170,13 @@ class ChatService {
       batch.update(roomRef, {'unreadCount.$currentUserId': 0});
 
       await batch.commit();
-      debugPrint('Marked $updatedCount messages as seen in room $roomId');
+      if (kDebugMode) {
+        debugPrint('Marked $updatedCount messages as seen in room $roomId');
+      }
     } catch (e) {
-      debugPrint('Error marking messages as seen: $e');
+      if (kDebugMode) {
+        debugPrint('Error marking messages as seen: $e');
+      }
     }
   }
 

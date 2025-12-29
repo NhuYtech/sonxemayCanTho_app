@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bcrypt/bcrypt.dart';
 
 class AccountService {
@@ -54,8 +55,11 @@ class AccountService {
     try {
       final doc = await _accountCollection.doc(uid).get();
       if (doc.exists) return doc.data() as Map<String, dynamic>;
-      // ignore: empty_catches
-    } catch (e) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error getting account by id: $e');
+      }
+    }
     return null;
   }
 }

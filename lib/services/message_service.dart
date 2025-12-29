@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import '../models/message.dart';
 
 class MessageService {
@@ -124,8 +125,12 @@ class MessageService {
           data: {'type': 'message', 'content': messageContent},
         );
       }
-      // ignore: empty_catches
-    } catch (e) {}
+    } catch (e) {
+      // Silently fail - FCM notification là optional
+      if (kDebugMode) {
+        debugPrint('Failed to send FCM notification: $e');
+      }
+    }
   }
 
   // Stream để lắng nghe tin nhắn mới

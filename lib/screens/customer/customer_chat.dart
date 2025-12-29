@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../services/chat_service.dart';
@@ -53,7 +54,9 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
   void _initializeChat() async {
     try {
       if (_chatService.currentUserId == null) {
-        debugPrint('User not authenticated');
+        if (kDebugMode) {
+          debugPrint('User not authenticated');
+        }
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -63,7 +66,9 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
         return;
       }
 
-      debugPrint('Finding manager...');
+      if (kDebugMode) {
+        debugPrint('Finding manager...');
+      }
       // Find manager
       final managerSnapshot = await _firestore
           .collection('users')
@@ -72,7 +77,9 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
           .get();
 
       if (managerSnapshot.docs.isEmpty) {
-        debugPrint('Không tìm thấy manager');
+        if (kDebugMode) {
+          debugPrint('Không tìm thấy manager');
+        }
         if (mounted) {
           setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -85,12 +92,18 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
       }
 
       _managerId = managerSnapshot.docs.first.id;
-      debugPrint('Manager ID: $_managerId');
+      if (kDebugMode) {
+        debugPrint('Manager ID: $_managerId');
+      }
 
       // Create or get room with manager
-      debugPrint('Creating/getting room...');
+      if (kDebugMode) {
+        debugPrint('Creating/getting room...');
+      }
       _roomId = await _chatService.createOrGetRoom(_managerId!);
-      debugPrint('Room ID: $_roomId');
+      if (kDebugMode) {
+        debugPrint('Room ID: $_roomId');
+      }
 
       // Mark messages as seen initially and when new messages arrive
       await _chatService.markMessagesAsSeen(_roomId!);
@@ -98,9 +111,13 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
       if (mounted) {
         setState(() => _isLoading = false);
       }
-      debugPrint('Chat initialized successfully');
+      if (kDebugMode) {
+        debugPrint('Chat initialized successfully');
+      }
     } catch (e) {
-      debugPrint('Error initializing chat: $e');
+      if (kDebugMode) {
+        debugPrint('Error initializing chat: $e');
+      }
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(
@@ -222,7 +239,9 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
                                         boxShadow: [
                                           BoxShadow(
                                             // ignore: deprecated_member_use
-                                            color: Colors.grey.withOpacity(0.2),
+                                            color: Colors.grey.withValues(
+                                              alpha: 0.2,
+                                            ),
                                             spreadRadius: 1,
                                             blurRadius: 3,
                                             offset: const Offset(0, 2),
@@ -299,7 +318,7 @@ class _CustomerChatScreenState extends State<CustomerChatScreen>
                         boxShadow: [
                           BoxShadow(
                             // ignore: deprecated_member_use
-                            color: Colors.red.withOpacity(0.4),
+                            color: Colors.red.withValues(alpha: 0.4),
                             spreadRadius: 1,
                             blurRadius: 5,
                             offset: const Offset(0, 3),

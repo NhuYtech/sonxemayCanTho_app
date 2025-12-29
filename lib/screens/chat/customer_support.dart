@@ -170,32 +170,21 @@ class _CustomerSupportState extends State<CustomerSupport> {
   Widget _buildMessageBubble(ChatMessage message) {
     final isCurrentUser = message.senderId == _chatService.currentUserId;
 
-    // System or Warning messages
-    if (message.type == MessageType.system ||
-        message.type == MessageType.warning) {
+    // System messages
+    if (message.type == MessageType.system) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Center(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: message.type == MessageType.warning
-                  ? Colors.orange.shade100
-                  : Colors.grey.shade200,
+              color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  message.type == MessageType.warning
-                      ? Icons.warning
-                      : Icons.info,
-                  size: 16,
-                  color: message.type == MessageType.warning
-                      ? Colors.orange
-                      : Colors.grey,
-                ),
+                const Icon(Icons.info, size: 16, color: Colors.grey),
                 const SizedBox(width: 8),
                 Flexible(
                   child: Text(
@@ -230,7 +219,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                 boxShadow: [
                   BoxShadow(
                     // ignore: deprecated_member_use
-                    color: Colors.grey.withOpacity(0.2),
+                    color: Colors.grey.withValues(alpha: 0.2),
                     spreadRadius: 1,
                     blurRadius: 3,
                     offset: const Offset(0, 2),
@@ -322,7 +311,7 @@ class _CustomerSupportState extends State<CustomerSupport> {
                 boxShadow: [
                   BoxShadow(
                     // ignore: deprecated_member_use
-                    color: Colors.red.withOpacity(0.4),
+                    color: Colors.red.withValues(alpha: 0.4),
                     spreadRadius: 1,
                     blurRadius: 5,
                     offset: const Offset(0, 3),

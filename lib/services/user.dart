@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class UserService {
@@ -85,8 +86,11 @@ class UserService {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) return doc.data() as Map<String, dynamic>;
-      // ignore: empty_catches
-    } catch (e) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error getting user by id: $e');
+      }
+    }
     return null;
   }
 }
