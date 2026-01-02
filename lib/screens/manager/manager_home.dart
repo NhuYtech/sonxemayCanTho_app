@@ -64,7 +64,6 @@ class _ManagerHomeState extends State<ManagerHome> {
       _customerCount = 'Đang tải...';
       _staffCount = 'Đang tải...';
       _totalStockOrders = 'Đang tải...';
-      _initializeScreens();
     });
 
     try {
@@ -77,16 +76,7 @@ class _ManagerHomeState extends State<ManagerHome> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _screens[0] = Dashboard(
-            revenue: 'Không hiển thị',
-            totalOrders: _totalOrders,
-            stockQuantity: _stockQuantity,
-            damagedItems: _damagedItems,
-            customerCount: _customerCount,
-            staffCount: _staffCount,
-            totalStockOrders: _totalStockOrders,
-            isLoading: _isLoading,
-          );
+          _initializeScreens();
         });
       }
     } catch (e) {
@@ -99,16 +89,6 @@ class _ManagerHomeState extends State<ManagerHome> {
           _staffCount = 'Lỗi tải dữ liệu';
           _totalStockOrders = 'Lỗi tải dữ liệu';
           _isLoading = false;
-          _screens[0] = Dashboard(
-            revenue: 'Lỗi tải dữ liệu',
-            totalOrders: _totalOrders,
-            stockQuantity: _stockQuantity,
-            damagedItems: _damagedItems,
-            customerCount: _customerCount,
-            staffCount: _staffCount,
-            totalStockOrders: _totalStockOrders,
-            isLoading: _isLoading,
-          );
         });
       }
     }

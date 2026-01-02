@@ -25,9 +25,9 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
           colors: [
             backgroundColor,
             backgroundColor.withValues(
-              red: (backgroundColor.red * 0.8).clamp(0, 255).toInt() / 255,
-              green: (backgroundColor.green * 0.8).clamp(0, 255).toInt() / 255,
-              blue: (backgroundColor.blue * 0.8).clamp(0, 255).toInt() / 255,
+              red: ((backgroundColor.r * 255.0).round() & 0xff) * 0.8 / 255,
+              green: ((backgroundColor.g * 255.0).round() & 0xff) * 0.8 / 255,
+              blue: ((backgroundColor.b * 255.0).round() & 0xff) * 0.8 / 255,
             ),
           ],
         ),

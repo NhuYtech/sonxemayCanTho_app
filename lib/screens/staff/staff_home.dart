@@ -42,18 +42,21 @@ class _StaffHomeState extends State<StaffHome> {
   }
 
   void _fetchDashboardData() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _totalImportOrders = 'Đang tải...';
       _totalExportOrders = 'Đang tải...';
       _totalStockOrders = 'Đang tải...';
-      _initializeScreens();
     });
 
     try {
-      await _fetchTotalImportOrders();
-      await _fetchTotalExportOrders();
-      await _fetchTotalStockOrders();
+      await Future.wait([
+        _fetchImportOrders(),
+        _fetchExportOrders(),
+        _fetchStockOrders(),
+      ]);
 
       if (mounted) {
         setState(() {
@@ -68,67 +71,19 @@ class _StaffHomeState extends State<StaffHome> {
           _totalExportOrders = 'Lỗi tải dữ liệu';
           _totalStockOrders = 'Lỗi tải dữ liệu';
           _isLoading = false;
-          _initializeScreens();
         });
       }
     }
   }
 
-  Future<void> _fetchTotalImportOrders() async {
+  Future<void> _fetchImportOrders() async {
     try {
-      List<String> possibleCollections = [
-        'serviceOrders',
-        'orders',
-        'import_orders',
-        'importOrders',
-        'phieu_nhap',
-        'don_nhap',
-        'stock_imports',
-        'purchase_orders',
-        'imports',
-      ];
-
-      int totalImports = 0;
-      bool foundCollection = false;
-
-      for (String collectionName in possibleCollections) {
-        try {
-          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-              .collection(collectionName)
-              .get();
-
-          if (querySnapshot.docs.isNotEmpty) {
-            if (collectionName.toLowerCase().contains('import') ||
-                collectionName.toLowerCase().contains('nhap') ||
-                collectionName.toLowerCase().contains('serviceorders')) {
-              totalImports = querySnapshot.docs.length;
-              foundCollection = true;
-              break;
-            } else {
-              for (var doc in querySnapshot.docs) {
-                var data = doc.data() as Map<String, dynamic>;
-                if (data.containsKey('type') &&
-                    (data['type'].toString().toLowerCase().contains('import') ||
-                        data['type'].toString().toLowerCase().contains(
-                          'nhap',
-                        ))) {
-                  totalImports = querySnapshot.docs.length;
-                  foundCollection = true;
-                  break;
-                }
-              }
-              if (foundCollection) break;
-            }
-          }
-        } catch (e) {
-          // Tĩnh lặng bỏ qua collection không tồn tại
-          continue;
-        }
-      }
-
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('serviceOrders')
+          .get();
       if (mounted) {
         setState(() {
-          _totalImportOrders = '$totalImports đơn';
+          _totalImportOrders = '${snapshot.docs.length} đơn nhập';
         });
       }
     } catch (e) {
@@ -140,63 +95,14 @@ class _StaffHomeState extends State<StaffHome> {
     }
   }
 
-  Future<void> _fetchTotalExportOrders() async {
+  Future<void> _fetchExportOrders() async {
     try {
-      int totalExports = 0;
-      List<String> possibleCollections = [
-        'export_orders',
-        'exportOrders',
-        'phieu_xuat',
-        'don_xuat',
-        'stock_exports',
-        'sale_orders',
-        'sales',
-        'exports',
-      ];
-
-      bool foundCollection = false;
-
-      for (String collectionName in possibleCollections) {
-        try {
-          QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-              .collection(collectionName)
-              .get();
-
-          if (querySnapshot.docs.isNotEmpty) {
-            if (collectionName.toLowerCase().contains('export') ||
-                collectionName.toLowerCase().contains('xuat') ||
-                collectionName.toLowerCase().contains('sale')) {
-              totalExports = querySnapshot.docs.length;
-              foundCollection = true;
-              break;
-            } else {
-              for (var doc in querySnapshot.docs) {
-                var data = doc.data() as Map<String, dynamic>;
-                if (data.containsKey('type') &&
-                    (data['type'].toString().toLowerCase().contains('export') ||
-                        data['type'].toString().toLowerCase().contains(
-                          'xuat',
-                        ) ||
-                        data['type'].toString().toLowerCase().contains(
-                          'sale',
-                        ))) {
-                  totalExports = querySnapshot.docs.length;
-                  foundCollection = true;
-                  break;
-                }
-              }
-              if (foundCollection) break;
-            }
-          }
-        } catch (e) {
-          // Tỉnh lặng bỏ qua collection không tồn tại
-          continue;
-        }
-      }
-
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('exportOrders')
+          .get();
       if (mounted) {
         setState(() {
-          _totalExportOrders = '$totalExports đơn';
+          _totalExportOrders = '${snapshot.docs.length} đơn xuất';
         });
       }
     } catch (e) {
@@ -208,21 +114,14 @@ class _StaffHomeState extends State<StaffHome> {
     }
   }
 
-  Future<void> _fetchTotalStockOrders() async {
+  Future<void> _fetchStockOrders() async {
     try {
-      int totalStockOrders = 0;
-      final stockStatuses = ['Đã nhận', 'Đang sơn', 'Đã sơn xong'];
-
-      final QuerySnapshot stockOrdersSnapshot = await FirebaseFirestore.instance
-          .collection('serviceOrders')
-          .where('status', whereIn: stockStatuses)
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('inventory')
           .get();
-
-      totalStockOrders = stockOrdersSnapshot.docs.length;
-
       if (mounted) {
         setState(() {
-          _totalStockOrders = '$totalStockOrders đơn';
+          _totalStockOrders = '${snapshot.docs.length} sản phẩm';
         });
       }
     } catch (e) {
@@ -235,86 +134,48 @@ class _StaffHomeState extends State<StaffHome> {
   }
 
   void _refreshData() {
-    setState(() {
-      _isLoading = true;
-      _totalImportOrders = 'Đang tải...';
-      _totalExportOrders = 'Đang tải...';
-      _totalStockOrders = 'Đang tải...';
-      _initializeScreens();
-    });
     _fetchDashboardData();
   }
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFC1473B),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 10,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        gradient: LinearGradient(
+          colors: [Colors.red.shade700, Colors.red.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const CircleAvatar(
-                  backgroundImage: AssetImage('assets/logo/logo1.png'),
-                  radius: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Xin chào,\n${widget.name}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Xin chào,',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                      Text(
+                        widget.name,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                // const Icon(Icons.notifications, color: Colors.yellow, size: 28),
-                const SizedBox(width: 8),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                hintText: 'Tìm kiếm...',
-                prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.grey),
-                  onPressed: () {},
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
-                ),
+                ],
               ),
-              onChanged: (value) {},
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
